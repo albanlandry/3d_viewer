@@ -69,6 +69,10 @@ export default {
   methods: {
     openFilePickr: function(){
       document.querySelector('#open-model-in').click();
+    },
+
+    uploadFile: function(){
+
     }
   }
 };

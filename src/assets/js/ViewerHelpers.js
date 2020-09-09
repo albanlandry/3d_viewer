@@ -1,4 +1,4 @@
-export default class BasicArrowHelper{
+export default class BasicArrowHelper {
     constructor() {
         this.up = null;
         this.forward = null;
