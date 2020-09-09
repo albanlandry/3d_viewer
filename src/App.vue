@@ -1,6 +1,8 @@
 <template>
   <v-app>
-    <v-navigation-drawer app>
+    <v-navigation-drawer
+    :clipped="$vuetify.breakpoint.lgAndUp"
+    app>
       <!-- -->
     </v-navigation-drawer>
     <v-app-bar
@@ -30,13 +32,15 @@
 
       <v-spacer></v-spacer>
 
+      <v-file-input class="d-none" id="open-model-in" name="open-model-in"></v-file-input>
       <v-btn
-        href="https://github.com/vuetifyjs/vuetify/releases/latest"
+        @click.prevent="openFilePickr"
+        href="#"
         target="_blank"
         text
       >
-        <span class="mr-2">Latest Release</span>
-        <v-icon>mdi-open-in-new</v-icon>
+        <span class="mr-2">Open File</span>
+        <v-icon>mdi-import</v-icon>
       </v-btn>
     </v-app-bar>
 
@@ -61,5 +65,11 @@ export default {
   data: () => ({
     //
   }),
+
+  methods: {
+    openFilePickr: function(){
+      document.querySelector('#open-model-in').click();
+    }
+  }
 };
 </script>

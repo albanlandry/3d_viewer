@@ -29,6 +29,7 @@
     // window.THREE = require('THREE');
     // import * as THREE from 'three';
     // import { OrbitControls } from 'https://unpkg.com/three@<VERSION>/examples/jsm/controls/OrbitControls.js';
+    import BasicArrowHelper from '@/assets/js/ViewerHelpers';
 
     export default {
         data: () => ({
@@ -38,7 +39,8 @@
             objects: [],
             WIDTH: 500,
             HEIGHT: 500,
-            container: null
+            container: null,
+            arrowHelper: new BasicArrowHelper()
         }),
 
         mounted: function(){
@@ -133,18 +135,9 @@
                 // this.scene.add(cube);
                 this.scene.add(this.camera);
 
-                // Example arrow helper
-                var dir = new window.THREE.Vector3( 1, 2, 0 );
+                // The arrowHelper
+                this.scene.add(this.arrowHelper.getObject());
 
-                //normalize the direction vector (convert to vector of length 1)
-                dir.normalize();
-
-                var origin = new window.THREE.Vector3( 0, 0, 0 );
-                var length = 100;
-                var hex = 0x55ff00;
-
-                var arrowHelper = new window.THREE.ArrowHelper( dir, origin, length, hex );
-                this.scene.add( arrowHelper );
 
                 // Render the scene
                 // Start the renderer.
@@ -156,9 +149,8 @@
 
                 // Orbit controller
                 var controls = new window.THREE.OrbitControls( this.camera, this.renderer.domElement );
-
                 controls.enablePan = false;
-                controls.enableZoom = false;
+                // controls.enableZoom = false;
                 controls.target.set( 0, 15, 0 );
                 controls.update();
 
