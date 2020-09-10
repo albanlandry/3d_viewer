@@ -1,16 +1,16 @@
 <style scoped>
-    .container {
+    .container-wrap {
         display: flex;
         flex-direction: column;
         overflow: hidden;
         width: 100%;
         height: 100%;
-        margin: 0 auto;
+        margin: -5px auto;
         padding: 0px;
         background-color:aqua;
     }
 
-    .container .viewport {
+    .container-wrap .viewport {
         overflow: hidden;
         width: 100%;
         flex: 1;
@@ -20,7 +20,7 @@
 </style>
 
 <template>
-    <div id="mainViewport" class="container">
+    <div id="mainViewport" class="container-wrap">
         <canvas id="mainCanvas" class="viewport"></canvas>
     </div>
 </template>
