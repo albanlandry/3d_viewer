@@ -1,18 +1,16 @@
 <style scoped>
     .container-wrap {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         overflow: hidden;
-        width: 100%;
-        
         margin: 0px auto;
         padding: 0px;
         background-color:aqua;
+        height: 100%;
     }
 
     .container-wrap .viewport {
         overflow: hidden;
-
         flex: 1;
         margin: 0 auto;
         background-color:bisque;

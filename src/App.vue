@@ -1,10 +1,10 @@
 <template>
   <v-app>
     <v-navigation-drawer
-    absolute="true"
     :clipped="$vuetify.breakpoint.lgAndUp"
     app>
       <!-- -->
+        <TreeHierarchy />
     </v-navigation-drawer>
     <v-app-bar
       app
@@ -48,6 +48,7 @@
 // import HelloWorld from './components/HelloWorld';
 import FileModelUploader from './components/FileModelUploader';
 import ViewPort from './components/ViewPort';
+import TreeHierarchy from './components/TreeHierarchy';
 import {store} from '@/assets/store/store'
 // import WebObjectLoader from '@/assets/js/ObjectLoader';
 // import * as THREE from 'three';
@@ -57,7 +58,7 @@ export default {
   store: store,
 
   components: {
-    ViewPort, FileModelUploader// HelloWorld,
+    ViewPort, FileModelUploader, TreeHierarchy// HelloWorld,
   },
 
   data: () => ({
