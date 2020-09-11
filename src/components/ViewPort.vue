@@ -4,15 +4,15 @@
         flex-direction: column;
         overflow: hidden;
         width: 100%;
-        height: 100%;
-        margin: -5px auto;
+        
+        margin: 0px auto;
         padding: 0px;
         background-color:aqua;
     }
 
     .container-wrap .viewport {
         overflow: hidden;
-        width: 100%;
+
         flex: 1;
         margin: 0 auto;
         background-color:bisque;
@@ -29,7 +29,7 @@
     // window.THREE = require('THREE');
     // import * as THREE from 'three';
     // import { OrbitControls } from 'https://unpkg.com/three@<VERSION>/examples/jsm/controls/OrbitControls.js';
-    import BasicArrowHelper from '@/assets/js/ViewerHelpers';
+    // import BasicArrowHelper from '@/assets/js/ViewerHelpers';
 
     export default {
         data: () => ({
@@ -40,7 +40,7 @@
             WIDTH: 500,
             HEIGHT: 500,
             container: null,
-            arrowHelper: new BasicArrowHelper()
+            arrowHelper: new window.THREE.AxesHelper( 40 )
         }),
 
         mounted: function(){
@@ -136,7 +136,7 @@
                 this.scene.add(this.camera);
 
                 // The arrowHelper
-                this.scene.add(this.arrowHelper.getObject());
+                this.scene.add(this.arrowHelper);
 
 
                 // Render the scene
@@ -170,7 +170,21 @@
                 this.camera.updateProjectionMatrix();
 
                 this.renderer.setSize( this.WIDTH, this.HEIGHT );
+            },
+
+            /**
+             * Load an object to the scene
+             * */
+            load: function(obj){
+                if(!this.scene){
+                    throw "ViewPort Not initialized";
+                }
+
+                obj.scale.set(5, 5, 5);
+                obj.position.set(0, 0, 0);
+                this.scene.add(obj);
             }
+
         }
     }
 </script>

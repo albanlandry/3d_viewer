@@ -77,7 +77,6 @@ THREE.FBXLoader = ( function () {
 			if ( isFbxFormatBinary( FBXBuffer ) ) {
 
 				fbxTree = new BinaryParser().parse( FBXBuffer );
-
 			} else {
 
 				var FBXText = convertArrayBufferToString( FBXBuffer );
