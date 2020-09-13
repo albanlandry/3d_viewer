@@ -41,7 +41,7 @@ export default {
     arrowHelper: new window.THREE.AxesHelper(40),
   }),
 
-  mounted: function() {
+  mounted: function () {
     // Mount external scripts
     /*
             let recaptchaScript = document.createElement('script')
@@ -59,7 +59,7 @@ export default {
   },
 
   methods: {
-    init: function() {
+    init: function () {
       // Set the scene size.
       var canvas = document.querySelector("#mainCanvas");
       this.renderer = new window.THREE.WebGLRenderer({ canvas });
@@ -159,12 +159,12 @@ export default {
       window.addEventListener("resize", this.onWindowResize, false);
     }, // init
 
-    animate: function() {
+    animate: function () {
       requestAnimationFrame(this.animate);
       this.renderer.render(this.scene, this.camera);
     },
 
-    onWindowResize: function() {
+    onWindowResize: function () {
       this.WIDTH = this.container.offsetWidth;
       this.HEIGHT = this.container.offsetHeight;
 
@@ -177,7 +177,7 @@ export default {
     /**
      * Load an object to the scene
      * */
-    load: function(obj) {
+    load: function (obj) {
       if (!this.scene) {
         throw "ViewPort Not initialized";
       }
@@ -199,8 +199,8 @@ export default {
       this.$root.$emit("model-loaded");
     },
 
-    setMaterial: function(obj, material) {
-      obj.traverse(function(child) {
+    setMaterial: function (obj, material) {
+      obj.traverse(function (child) {
         if (child instanceof window.THREE.Mesh) {
           child.material = material;
           // console.log(child);

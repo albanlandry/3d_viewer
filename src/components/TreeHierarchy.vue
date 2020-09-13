@@ -1,5 +1,6 @@
 <template>
   <v-treeview
+    :active.sync="active"
     :open-on-click="true"
     :dense="true"
     :activatable="true"
@@ -11,6 +12,7 @@
 export default {
   data: () => ({
     items: [],
+    active: [],
   }),
 
   methods: {
@@ -24,16 +26,19 @@ export default {
     // Listening to model-loaded events
     this.$root.$on("model-loaded", () => {
       // Update the list of item
-      console.log("EVENT EMITTED");
-      self.items = self.$store.getters.items;
+      self.updateItem();
+      console.log("EVENT EMITTED", self.items);
     });
   },
-  /*
+
   computed: {
-    items() {
+    selected() {
+      if (!this.active.length) return undefined;
+
+      alert(this.active);
+
       return this.$store.getters.items;
     },
   },
-  */
 };
 </script>

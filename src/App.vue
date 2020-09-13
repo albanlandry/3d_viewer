@@ -3,19 +3,21 @@
     <v-navigation-drawer v-model="drawer" clipped app>
       <!-- -->
       <v-expansion-panels>
-        <v-expansion-panel>
-          <v-expansion-panel-header>Model</v-expansion-panel-header>
+        <v-expansion-panel @change="updateTree">
+          <v-expansion-panel-header>MODEL</v-expansion-panel-header>
           <v-expansion-panel-content>
             <TreeHierarchy />
           </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel>
-          <v-expansion-panel-header>Material</v-expansion-panel-header>
-          <v-expansion-panel-content> </v-expansion-panel-content>
+          <v-expansion-panel-header>MATERIAL</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <CustomColorPicker />
+          </v-expansion-panel-content>
         </v-expansion-panel>
         <v-expansion-panel>
-          <v-expansion-panel-header>Light</v-expansion-panel-header>
-          <v-expansion-panel-content> </v-expansion-panel-content>
+          <v-expansion-panel-header>LIGHTING</v-expansion-panel-header>
+          <v-expansion-panel-content></v-expansion-panel-content>
         </v-expansion-panel>
       </v-expansion-panels>
     </v-navigation-drawer>
@@ -60,6 +62,7 @@
 import FileModelUploader from "./components/FileModelUploader";
 import ViewPort from "./components/ViewPort";
 import TreeHierarchy from "./components/TreeHierarchy";
+import CustomColorPicker from "./components/CustomColorPicker";
 import { store } from "@/assets/store/store";
 // import WebObjectLoader from '@/assets/js/ObjectLoader';
 // import * as THREE from 'three';
@@ -71,7 +74,8 @@ export default {
   components: {
     ViewPort,
     FileModelUploader,
-    TreeHierarchy, // HelloWorld,
+    TreeHierarchy,
+    CustomColorPicker, // HelloWorld,
   },
 
   data: () => ({
@@ -80,13 +84,17 @@ export default {
     drawer: null,
   }),
 
-  mounted: function() {
+  mounted: function () {
     this.viewport = this.$refs.viewport;
   },
 
   methods: {
-    fileLoaded: function(file) {
+    fileLoaded: function (file) {
       this.viewport.load(file);
+    },
+
+    updateTree: function () {
+      this.$root.$emit("model-loaded");
     },
   },
 };

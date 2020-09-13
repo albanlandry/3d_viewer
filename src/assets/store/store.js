@@ -10,11 +10,14 @@ export const store = new Vuex.Store({
             color: 0xbbbbbb,
             flatShading: true
         },
+        sceneObjects: {},
+        showMaterial: false,
     },
 
     mutations: {
         addChild(state, data) {
             state.sceneTree[data.id] = data;
+            state.sceneObjects = getObjects(state.sceneObjects, data);
         },
 
         remove(state, key) {
@@ -43,11 +46,34 @@ export const store = new Vuex.Store({
 // VUEX INIT END
 
 /**
+ * 
+ * @param {*} objs 
+ * @param {*} data 
+ */
+function getObjects(objs, data) {
+    var items = Object.assign({}, objs);
+    // Adding object to the objects container
+    items[data.id] = data;
+
+    if (data.children.length > 0) {
+        data.traverse(function(child) {
+            if (child instanceof window.THREE.Mesh) {
+                items = getObjects(items, child);
+            }
+
+            return items;
+        });
+    }
+
+    return items;
+}
+
+/**
  * Compute the list of items from the scene tree view
  * @param {*} obj
  */
 function getItems(sceneTree) {
-    console.log(sceneTree);
+    console.log('Get-Items', sceneTree);
     var items = [];
 
     for (const [key] of Object.entries(sceneTree)) {
