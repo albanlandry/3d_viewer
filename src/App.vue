@@ -1,16 +1,28 @@
 <template>
   <v-app>
-    <v-navigation-drawer
-    :clipped="$vuetify.breakpoint.lgAndUp"
-    app>
+    <v-navigation-drawer v-model="drawer" clipped app>
       <!-- -->
-        <TreeHierarchy />
+      <v-expansion-panels>
+        <v-expansion-panel>
+          <v-expansion-panel-header>Model</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <TreeHierarchy />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel>
+          <v-expansion-panel-header>Material</v-expansion-panel-header>
+          <v-expansion-panel-content> </v-expansion-panel-content>
+        </v-expansion-panel>
+        <v-expansion-panel>
+          <v-expansion-panel-header>Light</v-expansion-panel-header>
+          <v-expansion-panel-content> </v-expansion-panel-content>
+        </v-expansion-panel>
+      </v-expansion-panels>
     </v-navigation-drawer>
-    <v-app-bar
-      app
-      color="primary"
-      dark
-    >
+    <v-app-bar app color="primary" dark clipped-left>
+      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-toolbar-title>Application</v-toolbar-title>
+      <v-spacer></v-spacer>
       <!--
       <div class="d-flex align-center">
         <v-img
@@ -31,51 +43,51 @@
           width="100"
         />
       </div>
-
-
-      <v-spacer></v-spacer>
       -->
-      <FileModelUploader @file-loaded="fileLoaded"></FileModelUploader>
+      <v-btn>
+        <FileModelUploader @file-loaded="fileLoaded"></FileModelUploader>
+      </v-btn>
     </v-app-bar>
 
     <v-main>
-      <ViewPort ref = "viewport"/>
+      <ViewPort ref="viewport" />
     </v-main>
   </v-app>
 </template>
 
 <script>
 // import HelloWorld from './components/HelloWorld';
-import FileModelUploader from './components/FileModelUploader';
-import ViewPort from './components/ViewPort';
-import TreeHierarchy from './components/TreeHierarchy';
-import {store} from '@/assets/store/store'
+import FileModelUploader from "./components/FileModelUploader";
+import ViewPort from "./components/ViewPort";
+import TreeHierarchy from "./components/TreeHierarchy";
+import { store } from "@/assets/store/store";
 // import WebObjectLoader from '@/assets/js/ObjectLoader';
 // import * as THREE from 'three';
 
 export default {
-  name: 'App',
-  store: store,
+  name: "App",
+  store,
 
   components: {
-    ViewPort, FileModelUploader, TreeHierarchy// HelloWorld,
+    ViewPort,
+    FileModelUploader,
+    TreeHierarchy, // HelloWorld,
   },
 
   data: () => ({
-    file: '',
-    viewport: null
+    file: "",
+    viewport: null,
+    drawer: null,
   }),
 
-  mounted: function(){
+  mounted: function() {
     this.viewport = this.$refs.viewport;
   },
 
   methods: {
-    fileLoaded: function(file){
-      console.log(file);
-      this.viewport.load(file)
-
-    }
-  }
+    fileLoaded: function(file) {
+      this.viewport.load(file);
+    },
+  },
 };
 </script>
