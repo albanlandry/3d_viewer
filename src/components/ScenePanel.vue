@@ -1,10 +1,6 @@
 <template>
-    <v-container>
-        <v-row>
-            <v-col cols="12">
-                <v-file-input @change="updateImg" accept="image/*" label="HDRI"></v-file-input>
-            </v-col>
-        </v-row>
+    <v-container fluid>
+        <v-file-input @change="updateImg" accept="image/*" label="HDRI"></v-file-input>
         <v-row>
             <v-col cols="12">
                 <v-img v-bind:src="src" aspect-ratio="1.7"></v-img>
