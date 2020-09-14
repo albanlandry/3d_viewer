@@ -12,6 +12,7 @@ export const store = new Vuex.Store({
         },
         sceneObjects: {},
         showMaterial: false,
+        selected: null
     },
 
     mutations: {
@@ -31,6 +32,10 @@ export const store = new Vuex.Store({
                 state.sceneTree[key].name = new_key;
             }
         },
+
+        selectItem(state, id) {
+            state.selected = state.sceneObjects[id];
+        }
     },
 
     getters: {
@@ -38,17 +43,21 @@ export const store = new Vuex.Store({
             return state.default_material;
         },
 
-        items(state) {
+        items: function(state) {
             return getItems(state.sceneTree);
         },
+
+        selected(state) {
+            return state.selected;
+        }
     },
 });
 // VUEX INIT END
 
 /**
- * 
- * @param {*} objs 
- * @param {*} data 
+ *
+ * @param {*} objs
+ * @param {*} data
  */
 function getObjects(objs, data) {
     var items = Object.assign({}, objs);
@@ -73,7 +82,6 @@ function getObjects(objs, data) {
  * @param {*} obj
  */
 function getItems(sceneTree) {
-    console.log('Get-Items', sceneTree);
     var items = [];
 
     for (const [key] of Object.entries(sceneTree)) {
@@ -96,6 +104,15 @@ function getChildren(obj) {
 
     if (obj.filename) {
         item["name"] = obj.filename;
+    }
+
+    // Determine the type of item based on its class
+    if (obj instanceof window.THREE.Light) {
+        item['type'] = "light";
+    } else if (obj instanceof window.THREE.Mesh) {
+        item['type'] = "mesh";
+    } else {
+        item['type'] = "obj";
     }
 
     if (obj.children.length > 0) {

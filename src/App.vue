@@ -1,23 +1,38 @@
 <template>
   <v-app>
-    <v-navigation-drawer v-model="drawer" clipped app>
+    <v-navigation-drawer
+      v-bind:width="325"
+      v-model="drawer" clipped app>
       <!-- -->
-      <v-expansion-panels>
-        <v-expansion-panel @change="updateTree">
-          <v-expansion-panel-header>MODEL</v-expansion-panel-header>
+      <v-expansion-panels
+        multiple
+      >
+        <v-expansion-panel>
+          <v-expansion-panel-header>COLLECTION</v-expansion-panel-header>
           <v-expansion-panel-content>
             <TreeHierarchy />
           </v-expansion-panel-content>
         </v-expansion-panel>
+
+        <v-expansion-panel @change="updateTree">
+          <v-expansion-panel-header>SCENE</v-expansion-panel-header>
+          <v-expansion-panel-content>
+            <ScenePanel />
+          </v-expansion-panel-content>
+        </v-expansion-panel>
+
         <v-expansion-panel>
           <v-expansion-panel-header>MATERIAL</v-expansion-panel-header>
           <v-expansion-panel-content>
             <CustomColorPicker />
           </v-expansion-panel-content>
         </v-expansion-panel>
+
         <v-expansion-panel>
           <v-expansion-panel-header>LIGHTING</v-expansion-panel-header>
-          <v-expansion-panel-content></v-expansion-panel-content>
+          <v-expansion-panel-content>
+            <LightingPanel />
+          </v-expansion-panel-content>
         </v-expansion-panel>
       </v-expansion-panels>
     </v-navigation-drawer>
@@ -62,7 +77,9 @@
 import FileModelUploader from "./components/FileModelUploader";
 import ViewPort from "./components/ViewPort";
 import TreeHierarchy from "./components/TreeHierarchy";
+import LightingPanel from "./components/LightingPanel";
 import CustomColorPicker from "./components/CustomColorPicker";
+import ScenePanel from "./components/ScenePanel";
 import { store } from "@/assets/store/store";
 // import WebObjectLoader from '@/assets/js/ObjectLoader';
 // import * as THREE from 'three';
@@ -75,7 +92,9 @@ export default {
     ViewPort,
     FileModelUploader,
     TreeHierarchy,
-    CustomColorPicker, // HelloWorld,
+    CustomColorPicker,
+    LightingPanel,
+    ScenePanel, // HelloWorld,
   },
 
   data: () => ({
