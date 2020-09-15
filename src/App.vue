@@ -6,8 +6,10 @@
       <!-- -->
       <v-expansion-panels
         multiple
+        :accordion="true"
+        :tile="true"
       >
-        <v-expansion-panel>
+        <v-expansion-panel @change="updateTree">
           <v-expansion-panel-header>COLLECTION</v-expansion-panel-header>
           <v-expansion-panel-content>
             <TreeHierarchy />
@@ -17,18 +19,18 @@
         <v-expansion-panel @change="updateTree">
           <v-expansion-panel-header>SCENE</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <ScenePanel />
+            <ScenePanel @hdr-selected="loadHdr" />
           </v-expansion-panel-content>
         </v-expansion-panel>
 
-        <v-expansion-panel>
+        <v-expansion-panel @change="updateTree">
           <v-expansion-panel-header>MATERIAL</v-expansion-panel-header>
           <v-expansion-panel-content>
-            <CustomColorPicker />
+            <CustomColorPicker @material-loaded="applyMaterial" />
           </v-expansion-panel-content>
         </v-expansion-panel>
 
-        <v-expansion-panel>
+        <v-expansion-panel @change="updateTree">
           <v-expansion-panel-header>LIGHTING</v-expansion-panel-header>
           <v-expansion-panel-content>
             <LightingPanel />
@@ -109,12 +111,23 @@ export default {
 
   methods: {
     fileLoaded: function (file) {
+      this.viewport.reset();
       this.viewport.load(file);
     },
 
     updateTree: function () {
       this.$root.$emit("model-loaded");
+      this.$root.$emit("item-selected");
     },
+
+    loadHdr(file){
+      console.log("APP", file);
+      this.viewport.loadHdr(file);
+    },
+
+    applyMaterial(file){
+      this.viewport.applyMaterial(file);
+    }
   },
 };
 </script>

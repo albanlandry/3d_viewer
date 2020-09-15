@@ -49,8 +49,12 @@ export default {
   mounted: function () {
     // In case the basic material changes
     this.$root.$on('color-changed', this.changeBasicMaterial);
-    // Adding light events
+    // Light related events
     this.$root.$on('add-light', this.newLight);
+    this.$root.$on('update-light-power', this.updateLightPower);
+    this.$root.$on('update-light-color', this.updateLightColor);
+    this.$root.$on('app-reset', this.reset);
+
     // Listen to the selection of element from the treeview
     this.$root.$on("item-selected", this.attachTransfContrller);
     // Mount external scripts
@@ -61,7 +65,7 @@ export default {
             */
     // Initialize the viewer
     this.container = document.querySelector("#mainViewport");
-
+    //  window.innerWidth / window.innerHeight
     this.WIDTH = this.container.offsetWidth;
     this.HEIGHT = this.container.offsetHeight;
 
@@ -77,7 +81,7 @@ export default {
 
       // Create a new camera
       const fov = 45;
-      const aspect = this.WIDTH / this.HEIGHT; // the canvas default
+      const aspect = window.innerWidth / window.innerHeight; // the canvas default
       const near = 0.1;
       const far = 10000;
       this.camera = new window.THREE.PerspectiveCamera(fov, aspect, near, far);
@@ -89,7 +93,16 @@ export default {
 
       this.scene = new window.THREE.Scene();
       this.scene.background = new window.THREE.Color(0xdddddd);
-      // this.scene.fog = new window.THREE.Fog(0xa0a0a0, 200, 1000);
+      this.scene.fog = new window.THREE.Fog(0xa0a0a0, 500, 1000);
+
+      /***************************** Ground */
+      /*
+      var ground = new window.THREE.Mesh( new window.THREE.PlaneBufferGeometry( 10000, 10000 ),
+        new window.THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+      ground.rotation.x = - Math.PI / 2;
+      ground.receiveShadow = true;
+      this.scene.add( ground );
+      */
 
       /***************************** LIGHTING */
       var hemiLight = new window.THREE.HemisphereLight(0xffffff, 0xffffff);
@@ -108,34 +121,13 @@ export default {
       directionalLight.shadow.camera.right = 120;
       directionalLight.intensity = 0.3;
       this.scene.add(directionalLight);
-      // this.load(directionalLight);
 
-      /*
-      const pointLight = new window.THREE.PointLight(0xffffff);
-      const pointLight2 = new window.THREE.PointLight(0xffffff);
-      const pointLight3 = new window.THREE.PointLight(0xffffff);
-
-      // set its position
-      pointLight.position.x = 10;
-      pointLight.position.y = 50;
-      pointLight.position.z = 130;
-
-      pointLight2.position.y = -50;
-      pointLight2.position.x = 0;
-
-      pointLight3.position.y = -100;
-      pointLight3.position.x = 0;
-
-      // add to the scene
-      this.scene.add(pointLight);
-      this.scene.add(pointLight2);
-      */
 
       /*** GRID HELPER **************************************/
       var grid = new window.THREE.GridHelper(5000, 50, 0x000000, 0x000000);
       grid.material.opacity = 0.2;
       grid.material.transparent = true;
-      this.scene.add(grid);
+      // this.scene.add(grid);
 
       // Next up we create a BoxGeometry which contains the data for a box.
       /*
@@ -312,10 +304,13 @@ export default {
       this.WIDTH = this.container.offsetWidth;
       this.HEIGHT = this.container.offsetHeight;
 
-      this.camera.aspect = this.WIDTH / this.HEIGHT;
+      this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
 
+      this.camera.updateProjectionMatrix();
       this.renderer.setSize(this.WIDTH, this.HEIGHT);
+
+      this.render();
     },
 
     /**
@@ -328,31 +323,29 @@ export default {
 
       obj.scale.set(5, 5, 5);
       obj.position.set(0, 0, 0);
-
-      console.log(obj);
       // Setting the default material it
+
       /*
-      if(!obj.material){
-        this.setMaterial(
-          obj,
-          new window.THREE.MeshPhongMaterial(this.$store.getters.DEFAULT_MATERIAL)
-        );
-      }
+      this.setMaterial(
+        obj,
+        new window.THREE.MeshPhongMaterial(this.$store.getters.DEFAULT_MATERIAL)
+      );
       */
 
       this.scene.add(obj);
 
       this.$store.commit("addChild", obj);
-      console.log(this.$store.getters.items);
       // Emit an updated event
       this.$root.$emit("model-loaded");
     },
 
     setMaterial: function (obj, material) {
+      material.roughness = 0.5;
+      material.metalness = 0.5;
+
       obj.traverse(function (child) {
         if (child instanceof window.THREE.Mesh) {
           child.material = material;
-          // console.log(child);
         }
       });
     },
@@ -415,7 +408,150 @@ export default {
         this.control.attach(this.$store.getters.selected);
         console.log("Selected controller attached");
       }
+    },
+
+    loadHdr(file){
+      var self = this;
+      var loader = null;
+
+      var pmremGenerator = new window.THREE.PMREMGenerator( this.renderer );
+      pmremGenerator.compileEquirectangularShader();
+
+      // Configuring the hdr loader
+      loader = new window.THREE.RGBELoader();
+      loader.setDataType( window.THREE.UnsignedByteType );
+
+      if(file){
+          var reader = new FileReader();
+
+          reader.onload = function(e){
+              self.src = e.target.result;
+              self.file = e.target.result;
+
+              loader.load(e.target.result, function(texture){
+                // var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+                var envMap = pmremGenerator.fromCubemap( texture ).texture;
+                self.scene.background = envMap;
+                self.scene.environment = envMap;
+
+                // Free resources
+                texture.dispose();
+                pmremGenerator.dispose();
+
+                // Refresh the scene
+                self.render();
+              });
+          }
+
+          reader.readAsDataURL(file);
+      }
+    },
+
+    /**
+     * Applies the current material to the selected object in the scene
+     * @param file {File}
+     */
+    applyMaterial(file){
+      var self = this;
+      var selection = this.$store.getters.selected;
+      console.log(file);
+      // Initialize the texture loader
+      var loader = new window.THREE.TextureLoader();
+
+      // We apply the material only if the selected element is a Mesh
+      // We alson check whether the give file is a valid file
+      // to perform the material mapping
+      if(selection && (selection instanceof window.THREE.Mesh) ){
+        if(file){
+            var reader = new FileReader();
+
+            reader.onload = function(e){
+                loader.load(e.target.result, function(texture){
+                  // We create the material when the texture is loaded
+                  var material = new window.THREE.MeshPhongMaterial( {map: texture} );
+
+                  // Set the material as the selected object's material
+                  selection.material = material;
+
+                  // Refresh the scene
+                  self.render();
+                });
+            }
+
+            reader.readAsDataURL(file);
+        }
+      }
+    },
+
+    /***
+     * Update the color of the currently selected light
+     */
+    updateLightColor(color){
+      const c = color.rgba;
+
+      const selection = this.$store.state.selected;
+      if(selection){
+        selection.color = new window.THREE.Color(`rgb(${c.r}, ${c.g}, ${c.b})`)
+      }
+    },
+
+    /***
+     * Update the power of the currently selected light
+     */
+    updateLightPower(value){
+      const selection = this.$store.state.selected;
+      if(selection){
+        selection.intensity = value;
+      }
+    },
+
+    /***
+     * Refresh the scene
+     */
+    render(){
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    reset(){
+      var self = this;
+      const children = this.$store.getters.sceneObjects;
+
+      Object.keys(children).forEach(function(item){
+        self.scene.remove(children[item]);
+      });
+      // this.render.domElementdocument.addEventListener('dblclick', null, false);
+      // Remove all the objects from the scene
+      /*
+      this.scene.traverse(function(child){
+        self.scene.remove(child);
+      });
+      */
+
+      this.$store.commit("reset");
+    },
+
+    /***
+     * Remove the object from the scene which corresponds to
+     * thegiven selector
+     * @param selector {String/Number}
+     */
+    remove(selector){
+      let obj = null;
+      try {
+        // Try to remove the object by id
+        obj = this.scene.getObjectById(selector);
+        this.scene.remove(obj);
+      }catch(e){
+        // Try to remove the object by name if the removal by id
+        // failed
+        try {
+          obj = this.scene.getObjectByName(selector);
+          this.scene.remove(obj);
+        }catch(e1){
+          console.log(e1);
+        }
+      }
     }
-  },
+ },
 };
 </script>

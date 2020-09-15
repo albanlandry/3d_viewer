@@ -36,7 +36,7 @@ export default {
 
   methods: {
     updateItem() {
-      console.log("updated", this.$store.state.sceneTree);
+      // console.log("updated", this.$store.state.sceneTree);
       this.items = this.getItems(this.$store.state.sceneTree);
     },
 
@@ -50,7 +50,7 @@ export default {
     },
 
     getItems(sceneTree) {
-        // console.log('Get-Items', sceneTree);
+        console.log('Get-Items', sceneTree);
         var items = [];
 
         for (const [key] of Object.entries(sceneTree)) {
@@ -108,7 +108,12 @@ export default {
     }
   },
 
-  mounted() {
+  mounted(){
+    console.log("TreeView Mounted");
+  },
+
+  created() {
+    console.log("TreeView Created", this)
     var self = this;
     // Listening to model-loaded events
     this.$root.$on("model-loaded", () => {

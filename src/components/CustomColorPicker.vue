@@ -44,7 +44,6 @@ export default {
   }),
 
   mounted() {
-    console.log(this.$store.getters.DEFAULT_MATERIAL.color.toString(16));
     this.color = "#" + this.$store.getters.DEFAULT_MATERIAL.color.toString(16);
 
     this.$root.$on("item-selected", this.updateView);
@@ -86,6 +85,8 @@ export default {
 
           reader.onload = function(e){
               self.src = e.target.result;
+              self.$emit("material-loaded", file);
+              console.log(file);
           }
 
           reader.readAsDataURL(file);

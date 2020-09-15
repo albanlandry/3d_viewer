@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-row>
     <v-file-input
       @change="onFilePickrChange"
       ref="file"
@@ -8,10 +8,10 @@
       name="open-model-in"
     ></v-file-input>
     <v-btn @click.prevent="openFilePickr" href="#" target="_blank" text>
-      <span class="mr-2">Open File</span>
+      <span class="mr-2">LOAD</span>
       <v-icon>mdi-import</v-icon>
     </v-btn>
-  </v-container>
+  </v-row>
 </template>
 
 <script>
@@ -44,9 +44,9 @@ export default {
         // Event when the file is loaded
         self.$emit("file-loaded", obj);
         /*
-                var CORRECT = 'Kaydara FBX Binary  \0';
-                console.log(CORRECT === window.THREE.LoaderUtils.decodeText(new Uint8Array( res, 0, CORRECT.length )));
-                */
+        var CORRECT = 'Kaydara FBX Binary  \0';
+        console.log(CORRECT === window.THREE.LoaderUtils.decodeText(new Uint8Array( res, 0, CORRECT.length )));
+        */
       });
       /*
             let formData = new FormData();

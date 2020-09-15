@@ -12,7 +12,13 @@ export const store = new Vuex.Store({
         },
         sceneObjects: {},
         showMaterial: false,
-        selected: null
+        selected: null,
+        lightTypes: {
+            jf: 0,
+            lf: 1,
+            hf: 2,
+            ff: 3,
+        }
     },
 
     mutations: {
@@ -21,10 +27,9 @@ export const store = new Vuex.Store({
             state.sceneObjects = getObjects(state.sceneObjects, data);
         },
 
-        remove(state, key) {
-            if (state.sceneTree.has(key)) {
-                state.sceneTree.delete(key);
-            }
+        reset(state) {
+            state.sceneTree = {};
+            state.sceneObjects = {};
         },
 
         rename(state, key, new_key) {
@@ -49,6 +54,10 @@ export const store = new Vuex.Store({
 
         selected(state) {
             return state.selected;
+        },
+
+        sceneObjects(state) {
+            return state.sceneObjects;
         }
     },
 });
