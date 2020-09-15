@@ -6,6 +6,7 @@
       class="d-none"
       id="open-model-in"
       name="open-model-in"
+      accept=".fbx, .obj"
     ></v-file-input>
     <v-btn @click.prevent="openFilePickr" href="#" target="_blank" text>
       <span class="mr-2">LOAD</span>
@@ -23,31 +24,58 @@ export default {
   }),
 
   methods: {
-    openFilePickr: function() {
+    openFilePickr: function () {
       document.querySelector("#open-model-in").click();
     },
 
-    onFilePickrChange: function(file) {
+    onFilePickrChange: function (file) {
       this.file = file;
 
       this.uploadFile();
     },
 
-    uploadFile: function() {
+    uploadFile: function () {
       var self = this;
-      var loader = new window.THREE.FBXLoader();
 
-      this.file.arrayBuffer().then(function(res) {
-        var obj = loader.parse(res);
-        obj["filename"] = self.file.name.split(".")[0];
+      if (this.file) {
+        // OBJLoader
+        var loader = new window.THREE.OBJLoader();
+        var reader = new FileReader();
 
-        // Event when the file is loaded
-        self.$emit("file-loaded", obj);
-        /*
+        var extension = this.file.name.split(".").pop();
+
+        if (extension === "fbx") {
+          loader = new window.THREE.FBXLoader();
+        }
+
+        reader.onload = function (e) {
+          loader.load(
+            e.target.result,
+            function (obj) {
+              obj["filename"] = self.file.name.split(".")[0];
+              // Event when the file is loaded
+              console.log(obj);
+              self.$emit("file-loaded", obj);
+            },
+
+            function (xhr) {
+              console.log((xhr.loaded / xhr.total) * 100 + "% loaded");
+            },
+
+            // called when loading has errors
+            function (error) {
+              console.log("An error happened: ", error);
+            }
+          );
+        };
+
+        reader.readAsDataURL(this.file);
+      }
+
+      /*
         var CORRECT = 'Kaydara FBX Binary  \0';
         console.log(CORRECT === window.THREE.LoaderUtils.decodeText(new Uint8Array( res, 0, CORRECT.length )));
         */
-      });
       /*
             let formData = new FormData();
             formData.append('model', this.file);

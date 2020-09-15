@@ -30,6 +30,7 @@ export const store = new Vuex.Store({
         reset(state) {
             state.sceneTree = {};
             state.sceneObjects = {};
+            state.selected = null;
         },
 
         rename(state, key, new_key) {
@@ -40,6 +41,21 @@ export const store = new Vuex.Store({
 
         selectItem(state, id) {
             state.selected = state.sceneObjects[id];
+        },
+
+        objectWithEnvMap(state) {
+            var keys = Object.keys(state.sceneObjects);
+            var items = [];
+
+            console.log(keys)
+
+            keys.forEach(function(val) {
+                if (state.sceneObjects[val].material) {
+                    items.push(state.sceneObjects[val]);
+                }
+            });
+
+            return items;
         }
     },
 

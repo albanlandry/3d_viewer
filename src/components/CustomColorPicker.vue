@@ -24,11 +24,28 @@
         </v-text-field>
       </v-col>
     </v-row>
-    <v-file-input @change="updateImg" accept="image/*" label="TEXTURE"></v-file-input>
+    <v-row v-if="showMaterial">
+      <v-col cols="6" class="shrink" style>
+        <v-text-field
+          single-line
+          hide-details
+          class="my-0 pa-0"
+          label="Shininess"
+          type="number"
+          value="1"
+          @change="updateMaterial"
+          @mousedown="updateMaterial"
+          @keydown="updateMaterial"
+          @input="updateMaterial"
+          v-model="params.shininess"
+        ></v-text-field>
+      </v-col>
+    </v-row>
+    <v-file-input @change="updateImg" accept="image/*, .mtl" label="TEXTURE"></v-file-input>
     <v-row>
-        <v-col cols="12">
-            <v-img v-bind:src="src" aspect-ratio="1.7"></v-img>
-        </v-col>
+      <v-col cols="12">
+        <v-img v-bind:src="src" aspect-ratio="1.7"></v-img>
+      </v-col>
     </v-row>
   </div>
 </template>
@@ -40,7 +57,7 @@ export default {
     // mask: "!#XXXXXXXX",
     menu: false,
     showMaterial: false,
-    src: ""
+    src: "",
   }),
 
   mounted() {
@@ -61,45 +78,83 @@ export default {
         transition: "border-radius 200ms ease-in-out",
       };
     },
+
+    // We enable only if it is a light from the dictionary variable
+    // lightType in the store
+    enabled() {
+      const selected = this.$store.state.selected;
+      if (selected) {
+        return !this.$store.state.lightTypes[selected.constructor.name];
+      }
+
+      return false;
+    },
+
+    params() {
+      const selected = this.$store.state.selected;
+
+      if (this.enabled) {
+        return {
+          emissive: selected.material
+            ? `#${selected.material.emissive.getHexString()}`
+            : "",
+          shininess: selected.material ? selected.material.shininess : "0",
+        };
+      }
+
+      return {};
+    },
   },
 
   methods: {
-    updateView(){
-      if(this.$store.getters.selected){
-        console.log("Selected:",this.$store.getters.selected);
+    updateView() {
+      var selection = this.$store.getters.selected;
+      if (
+        selection &&
+        !this.$store.state.lightTypes[selection.constructor.name]
+      ) {
+        console.log("Selected:", this.$store.getters.selected);
 
-        if(this.$store.getters.selected.material){
-          this.color = "#" +this.$store.getters.selected.material.color.getHexString();
+        if (this.$store.getters.selected.material) {
+          this.color =
+            "#" + this.$store.getters.selected.material.color.getHexString();
         }
 
         this.showMaterial = true;
+      } else {
+        this.showMaterial = false;
       }
     },
 
-    updateImg(file){
+    updateImg(file) {
       var self = this;
 
       // We update the file only if there is at least one selected`
-      if(file){
-          var reader = new FileReader();
+      if (file) {
+        var reader = new FileReader();
 
-          reader.onload = function(e){
-              self.src = e.target.result;
-              self.$emit("material-loaded", file);
-              console.log(file);
-          }
+        reader.onload = function (e) {
+          self.src = e.target.result;
+          self.$emit("material-loaded", file);
+          console.log(file);
+        };
 
-          reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
       }
     },
 
-    colorChanged(color){
+    colorChanged(color) {
       // console.log("color", color.rgba);
       // Event emitted when the color is changed
-      if(this.$store.getters.selected){
+      if (this.$store.getters.selected) {
         this.$root.$emit("color-changed", color.rgba);
       }
-    }
-  }
+    },
+
+    updateMaterial() {
+      this.$root.$emit("update-material", this.params);
+      console.log("Shininess", this.params);
+    },
+  },
 };
 </script>

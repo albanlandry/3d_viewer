@@ -1,11 +1,5 @@
 <template>
-  <v-treeview
-     v-model="selection"
-    :open-on-click="true"
-    :dense="true"
-    :activatable="true"
-    :items="items"
-  >
+  <v-treeview v-model="selection" :dense="true" activatable :items="items">
     <template v-slot:prepend="{ item}">
       <v-icon v-if="!item.children">{{ types[item.type] }}</v-icon>
       <v-icon v-if="item.children">mdi-shape</v-icon>
@@ -22,16 +16,16 @@ export default {
     selection: [],
     items: [],
     types: {
-      light: 'mdi-lightbulb-on-outline',
-      mesh: 'mdi-triangle',
-      obj: 'mdi-json',
+      light: "mdi-lightbulb-on-outline",
+      mesh: "mdi-triangle",
+      obj: "mdi-json",
     },
   }),
 
-  watch:{
+  watch: {
     selection(newValue) {
-      this.onUpdate(newValue)
-    }
+      this.onUpdate(newValue);
+    },
   },
 
   methods: {
@@ -41,24 +35,24 @@ export default {
     },
 
     onUpdate(selection) {
-      this.$store.commit('selectItem', selection);
+      this.$store.commit("selectItem", selection);
     },
 
-    selectItem(id){
-      this.$store.commit('selectItem', id);
-      this.$root.$emit('item-selected');
+    selectItem(id) {
+      this.$store.commit("selectItem", id);
+      this.$root.$emit("item-selected");
     },
 
     getItems(sceneTree) {
-        console.log('Get-Items', sceneTree);
-        var items = [];
+      // console.log('Get-Items', sceneTree);
+      var items = [];
 
-        for (const [key] of Object.entries(sceneTree)) {
-            var item = this.getChildren(sceneTree[key]);
-            items.push(item);
-        }
+      for (const [key] of Object.entries(sceneTree)) {
+        var item = this.getChildren(sceneTree[key]);
+        items.push(item);
+      }
 
-        return items;
+      return items;
     },
 
     /**
@@ -66,61 +60,61 @@ export default {
      * @param {*} obj
      */
     getChildren(obj) {
-        // Parent item
-        var self = this;
-        var item = {};
-        item["id"] = obj.id;
+      // Parent item
+      var self = this;
+      var item = {};
+      item["id"] = obj.id;
 
-        // We set the name of the object if there is one set
-        // Otherwise, it will keep the previously
-        if(obj.name.length > 0){
-          item["name"] = obj.name;
-        }
+      // We set the name of the object if there is one set
+      // Otherwise, it will keep the previously
+      if (obj.name.length > 0) {
+        item["name"] = obj.name;
+      }
 
-        if (obj.filename) {
-            item["name"] = obj.filename;
-        }
+      if (obj.filename) {
+        item["name"] = obj.filename;
+      }
 
-        // Determine the type of item based on its class
-        if (obj instanceof window.THREE.Light) {
-            item['type'] = "light";
-        } else if (obj instanceof window.THREE.Mesh) {
-            item['type'] = "mesh";
-        } else {
-            item['type'] = "obj";
-        }
+      // Determine the type of item based on its class
+      if (obj instanceof window.THREE.Light) {
+        item["type"] = "light";
+      } else if (obj instanceof window.THREE.Mesh) {
+        item["type"] = "mesh";
+      } else {
+        item["type"] = "obj";
+      }
 
-        if (obj.children.length > 0) {
-            item["children"] = [];
+      if (obj.children.length > 0) {
+        item["children"] = [];
 
-            obj.traverse(function(child) {
-                if (child instanceof window.THREE.Mesh) {
-                    // Recursive call
-                    item["children"].push(self.getChildren(child));
-                    // console.log("Recursive Call", child, item);
-                }
-            });
+        obj.traverse(function (child) {
+          if (child instanceof window.THREE.Mesh) {
+            // Recursive call
+            item["children"].push(self.getChildren(child));
+            // console.log("Recursive Call", child, item);
+          }
+        });
 
-            return item;
-        } else {
-            return item;
-        }
-    }
+        return item;
+      } else {
+        return item;
+      }
+    },
   },
 
-  mounted(){
+  mounted() {
     console.log("TreeView Mounted");
   },
 
   created() {
-    console.log("TreeView Created", this)
+    // console.log("TreeView Created", this)
     var self = this;
     // Listening to model-loaded events
     this.$root.$on("model-loaded", () => {
       // Update the list of item
       self.updateItem();
-      console.log("EVENT EMITTED", self.items);
-      console.log("Store", self.$store.state.sceneTree);
+      // console.log("EVENT EMITTED", self.items);
+      // console.log("Store", self.$store.state.sceneTree);
     });
   },
 
@@ -128,7 +122,7 @@ export default {
     selected() {
       if (!this.active.length) return undefined;
 
-      alert(this.active);
+      // alert(this.active);
 
       return this.$store.getters.items;
     },

@@ -43,17 +43,17 @@ export default {
     orbit: null,
     cameraOrtho: null,
     cameraPersp: null,
-
+    envMap: null,
   }),
 
   mounted: function () {
     // In case the basic material changes
-    this.$root.$on('color-changed', this.changeBasicMaterial);
+    this.$root.$on("color-changed", this.changeBasicMaterial);
     // Light related events
-    this.$root.$on('add-light', this.newLight);
-    this.$root.$on('update-light-power', this.updateLightPower);
-    this.$root.$on('update-light-color', this.updateLightColor);
-    this.$root.$on('app-reset', this.reset);
+    this.$root.$on("add-light", this.newLight);
+    this.$root.$on("update-light-power", this.updateLightPower);
+    this.$root.$on("update-light-color", this.updateLightColor);
+    this.$root.$on("app-reset", this.reset);
 
     // Listen to the selection of element from the treeview
     this.$root.$on("item-selected", this.attachTransfContrller);
@@ -88,8 +88,20 @@ export default {
       this.camera.position.set(200, 100, 200);
 
       // Camera rendering modes
-      this.cameraPersp = new window.THREE.PerspectiveCamera( 50, aspect, 0.01, 30000 );
-      this.cameraOrtho = new window.THREE.OrthographicCamera( - 600 * aspect, 600 * aspect, 600, - 600, 0.01, 30000 );
+      this.cameraPersp = new window.THREE.PerspectiveCamera(
+        50,
+        aspect,
+        0.01,
+        30000
+      );
+      this.cameraOrtho = new window.THREE.OrthographicCamera(
+        -600 * aspect,
+        600 * aspect,
+        600,
+        -600,
+        0.01,
+        30000
+      );
 
       this.scene = new window.THREE.Scene();
       this.scene.background = new window.THREE.Color(0xdddddd);
@@ -108,7 +120,7 @@ export default {
       var hemiLight = new window.THREE.HemisphereLight(0xffffff, 0xffffff);
       hemiLight.position.set(0, 200, 0);
       hemiLight.intensity = 1;
-      hemiLight.name = "hemisphere."+hemiLight.id
+      hemiLight.name = "hemisphere." + hemiLight.id;
       // this.scene.add(hemiLight);
       this.load(hemiLight);
 
@@ -120,8 +132,8 @@ export default {
       directionalLight.shadow.camera.left = -120;
       directionalLight.shadow.camera.right = 120;
       directionalLight.intensity = 0.3;
-      this.scene.add(directionalLight);
-
+      directionalLight.name = "directional." + directionalLight.id;
+      this.load(directionalLight);
 
       /*** GRID HELPER **************************************/
       var grid = new window.THREE.GridHelper(5000, 50, 0x000000, 0x000000);
@@ -177,63 +189,72 @@ export default {
     /******
      * Initialize the basic behaviour of the transforma controller
      */
-    INIT_TRANSFORM_CONTROL(){
+    INIT_TRANSFORM_CONTROL() {
       var self = this;
-      this.control = new window.THREE.TransformControls( this.camera, this.renderer.domElement );
+      this.control = new window.THREE.TransformControls(
+        this.camera,
+        this.renderer.domElement
+      );
 
       /************** EVENTS LISTENERS *************/
-      this.control.addEventListener( 'change', function(){
+      this.control.addEventListener("change", function () {
         self.renderer.render(self.scene, self.camera);
-      } );
+      });
 
-      this.control.addEventListener( 'dragging-changed', function ( event ) {
-        self.orbit.enabled = ! event.value;
+      this.control.addEventListener("dragging-changed", function (event) {
+        self.orbit.enabled = !event.value;
       });
     },
 
     /**
      * Initialize all the listening funcitonaliteis related to the window
      * */
-    INIT_WINDOW_LISTENERS(){
+    INIT_WINDOW_LISTENERS() {
       var self = this;
       window.addEventListener("resize", this.onWindowResize, false);
 
-      window.addEventListener( 'keydown', function ( event ) {
-
-        switch ( event.keyCode ) {
-
+      window.addEventListener("keydown", function (event) {
+        switch (event.keyCode) {
           case 81: // Q
-            self.control.setSpace( self.control.space === "local" ? "world" : "local" );
+            self.control.setSpace(
+              self.control.space === "local" ? "world" : "local"
+            );
             break;
 
           case 16: // Shift
-            self.control.setTranslationSnap( 100 );
-            self.control.setRotationSnap( window.THREE.MathUtils.degToRad( 15 ) );
-            self.control.setScaleSnap( 0.25 );
+            self.control.setTranslationSnap(100);
+            self.control.setRotationSnap(window.THREE.MathUtils.degToRad(15));
+            self.control.setScaleSnap(0.25);
             break;
 
           case 87: // W
-            self.control.setMode( "translate" );
+            self.control.setMode("translate");
             break;
 
           case 69: // E
-            self.control.setMode( "rotate" );
+            self.control.setMode("rotate");
             break;
 
           case 82: // R
-            self.control.setMode( "scale" );
+            self.control.setMode("scale");
             break;
 
           case 67: // C
             var position = self.camera.position.clone();
 
-            self.camera = self.camera.isPerspectiveCamera ? self.cameraOrtho : self.cameraPersp;
-            self.camera.position.copy( position );
+            self.camera = self.camera.isPerspectiveCamera
+              ? self.cameraOrtho
+              : self.cameraPersp;
+            self.camera.position.copy(position);
 
             self.orbit.object = self.camera;
             self.control.camera = self.camera;
 
-            self.camera.lookAt( self.orbit.target.x, self.orbit.target.y, self.orbit.target.z );
+            self.camera.lookAt(
+              self.orbit.target.x,
+              self.orbit.target.y,
+              self.orbit.target.z
+            );
             self.onWindowResize();
             break;
 
@@ -242,7 +263,7 @@ export default {
             var randomZoom = Math.random() + 0.1;
 
             self.cameraPersp.fov = randomFoV * 160;
-            self.cameraOrtho.bottom = - randomFoV * 500;
+            self.cameraOrtho.bottom = -randomFoV * 500;
             self.cameraOrtho.top = randomFoV * 500;
 
             self.cameraPersp.zoom = randomZoom * 5;
@@ -252,47 +273,41 @@ export default {
 
           case 187:
           case 107: // +, =, num+
-            self.control.setSize( self.control.size + 0.1 );
+            self.control.setSize(self.control.size + 0.1);
             break;
 
           case 189:
           case 109: // -, _, num-
-            self.control.setSize( Math.max( self.control.size - 0.1, 0.1 ) );
+            self.control.setSize(Math.max(self.control.size - 0.1, 0.1));
             break;
 
           case 88: // X
-            self.control.showX = ! self.control.showX;
+            self.control.showX = !self.control.showX;
             break;
 
           case 89: // Y
-            self.control.showY = ! self.control.showY;
+            self.control.showY = !self.control.showY;
             break;
 
           case 90: // Z
-            self.control.showZ = ! self.control.showZ;
+            self.control.showZ = !self.control.showZ;
             break;
 
           case 32: // Spacebar
-            self.control.enabled = ! self.control.enabled;
+            self.control.enabled = !self.control.enabled;
             break;
-
         }
+      });
 
-      } );
-
-      window.addEventListener( 'keyup', function ( event ) {
-
-        switch ( event.keyCode ) {
-
+      window.addEventListener("keyup", function (event) {
+        switch (event.keyCode) {
           case 16: // Shift
-            self.control.setTranslationSnap( null );
-            self.control.setRotationSnap( null );
-            self.control.setScaleSnap( null );
+            self.control.setTranslationSnap(null);
+            self.control.setRotationSnap(null);
+            self.control.setScaleSnap(null);
             break;
-
         }
-
-      } );
+      });
     },
 
     animate: function () {
@@ -316,7 +331,7 @@ export default {
     /**
      * Load an object to the scene
      * */
-    load: function (obj) {
+    load: function (obj, setMaterial) {
       if (!this.scene) {
         throw "ViewPort Not initialized";
       }
@@ -325,12 +340,14 @@ export default {
       obj.position.set(0, 0, 0);
       // Setting the default material it
 
-      /*
-      this.setMaterial(
-        obj,
-        new window.THREE.MeshPhongMaterial(this.$store.getters.DEFAULT_MATERIAL)
-      );
-      */
+      if (setMaterial) {
+        this.setMaterial(
+          obj,
+          new window.THREE.MeshPhongMaterial(
+            this.$store.getters.DEFAULT_MATERIAL
+          )
+        );
+      }
 
       this.scene.add(obj);
 
@@ -350,55 +367,63 @@ export default {
       });
     },
 
-    changeBasicMaterial(color){
+    changeBasicMaterial(color) {
       // Update the material of the selected element
-      if(this.$store.state.selected){
+      if (this.$store.state.selected) {
         this.setMaterial(
           this.$store.state.selected,
-          new window.THREE.MeshPhongMaterial({color: new window.THREE.Color(`rgb(${color.r}, ${color.g}, ${color.b})`)})
-          );
+          new window.THREE.MeshPhongMaterial({
+            color: new window.THREE.Color(
+              `rgb(${color.r}, ${color.g}, ${color.b})`
+            ),
+          })
+        );
       }
     },
 
-    newLight(id){
+    newLight(id) {
       var light = null;
 
       // For 0, create a PointLight
-      if(id == 0){
+      if (id == 0) {
         light = new window.THREE.PointLight(0xffffff, 1, 100);
-        light.name = "Point."+light.id;
+        light.name = "Point." + light.id;
       }
 
       // For 0, create a Directional light
-      if(id == 1){
-        light = new window.THREE.DirectionalLight( 0xffffff, 0.5 );
-        light.name = "Directional."+light.id;
+      if (id == 1) {
+        light = new window.THREE.DirectionalLight(0xffffff, 0.5);
+        light.name = "Directional." + light.id;
       }
 
       // For 0, create a Spot light
-      if(id == 2){
-        light = new window.THREE.SpotLight( 0xffffff );
-        light.name = "Spot."+light.id;
+      if (id == 2) {
+        light = new window.THREE.SpotLight(0xffffff);
+        light.name = "Spot." + light.id;
       }
 
       // For 0, create a Hemisphere light
-      if(id == 3){
-        light = new window.THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
-        light.name = "Hemisphere."+light.id;
+      if (id == 3) {
+        light = new window.THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+        light.name = "Hemisphere." + light.id;
       }
 
       // We load the light to the scene only if it was successfully created
-      if(light){
+      if (light) {
         this.load(light);
-      }else
-        throw new Error("INCORRECT ID PROVIDED");
+      } else throw new Error("INCORRECT ID PROVIDED");
     },
 
     /****
      * Attach the transform to the currently selected object
      */
-    attachTransfContrller(){
-      if(this.$store.getters.selected){
+    attachTransfContrller() {
+      const selection = this.$store.getters.selected;
+      if (
+        selection &&
+        this.$store.state.lightTypes[selection.constructor.name]
+      ) {
+        this.control.enabled = true;
         // If there is any attached object to the controller
         // We firstly detach it from the later selected
         this.control.detach();
@@ -407,43 +432,48 @@ export default {
         // Then attach it to the currently selected object
         this.control.attach(this.$store.getters.selected);
         console.log("Selected controller attached");
+      } else {
+        this.control.enabled = false;
       }
     },
 
-    loadHdr(file){
+    loadHdr(file) {
       var self = this;
       var loader = null;
 
-      var pmremGenerator = new window.THREE.PMREMGenerator( this.renderer );
+      var pmremGenerator = new window.THREE.PMREMGenerator(this.renderer);
       pmremGenerator.compileEquirectangularShader();
 
       // Configuring the hdr loader
       loader = new window.THREE.RGBELoader();
-      loader.setDataType( window.THREE.UnsignedByteType );
+      loader.setDataType(window.THREE.UnsignedByteType);
 
-      if(file){
-          var reader = new FileReader();
+      if (file) {
+        var reader = new FileReader();
 
-          reader.onload = function(e){
-              self.src = e.target.result;
-              self.file = e.target.result;
+        reader.onload = function (e) {
+          self.src = e.target.result;
+          self.file = e.target.result;
 
-              loader.load(e.target.result, function(texture){
-                // var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
-                var envMap = pmremGenerator.fromCubemap( texture ).texture;
-                self.scene.background = envMap;
-                self.scene.environment = envMap;
+          loader.load(e.target.result, function (texture) {
+            // var envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+            var envMap = pmremGenerator.fromCubemap(texture).texture;
+            self.envMap = envMap;
+            self.scene.background = envMap;
+            self.scene.environment = envMap;
 
-                // Free resources
-                texture.dispose();
-                pmremGenerator.dispose();
+            // Free resources
+            texture.dispose();
+            pmremGenerator.dispose();
 
-                // Refresh the scene
-                self.render();
-              });
-          }
+            // Refresh the envMap of all the materials presents in the scene
+            self.refreshEnvMap();
+            // Refresh the scene
+            self.render();
+          });
+        };
 
-          reader.readAsDataURL(file);
+        reader.readAsDataURL(file);
       }
     },
 
@@ -451,34 +481,47 @@ export default {
      * Applies the current material to the selected object in the scene
      * @param file {File}
      */
-    applyMaterial(file){
+    applyMaterial(file) {
       var self = this;
       var selection = this.$store.getters.selected;
-      console.log(file);
+      // console.log(file);
       // Initialize the texture loader
+      var extension = file.name.split(".").pop();
       var loader = new window.THREE.TextureLoader();
+
+      if (extension === "mtl") {
+        loader = new window.THREE.MTLLoader();
+      }
 
       // We apply the material only if the selected element is a Mesh
       // We alson check whether the give file is a valid file
       // to perform the material mapping
-      if(selection && (selection instanceof window.THREE.Mesh) ){
-        if(file){
-            var reader = new FileReader();
+      if (
+        selection &&
+        selection instanceof window.THREE.Mesh
+        // || selection.constructor.name === "Jc"
+      ) {
+        if (file) {
+          var reader = new FileReader();
 
-            reader.onload = function(e){
-                loader.load(e.target.result, function(texture){
-                  // We create the material when the texture is loaded
-                  var material = new window.THREE.MeshPhongMaterial( {map: texture} );
+          reader.onload = function (e) {
+            loader.load(e.target.result, function (texture) {
+              // We create the material when the texture is loaded
+              var material = new window.THREE.MeshPhongMaterial({
+                map: texture,
+              });
 
-                  // Set the material as the selected object's material
-                  selection.material = material;
+              console.log("MAterial: ", material);
+              // Set the material as the selected object's material
+              // self.setMaterial(selection, material);
+              selection.material = material;
 
-                  // Refresh the scene
-                  self.render();
-                });
-            }
+              // Refresh the scene
+              self.render();
+            });
+          };
 
-            reader.readAsDataURL(file);
+          reader.readAsDataURL(file);
         }
       }
     },
@@ -486,21 +529,21 @@ export default {
     /***
      * Update the color of the currently selected light
      */
-    updateLightColor(color){
+    updateLightColor(color) {
       const c = color.rgba;
 
       const selection = this.$store.state.selected;
-      if(selection){
-        selection.color = new window.THREE.Color(`rgb(${c.r}, ${c.g}, ${c.b})`)
+      if (selection) {
+        selection.color = new window.THREE.Color(`rgb(${c.r}, ${c.g}, ${c.b})`);
       }
     },
 
     /***
      * Update the power of the currently selected light
      */
-    updateLightPower(value){
+    updateLightPower(value) {
       const selection = this.$store.state.selected;
-      if(selection){
+      if (selection) {
         selection.intensity = value;
       }
     },
@@ -508,17 +551,36 @@ export default {
     /***
      * Refresh the scene
      */
-    render(){
+    render() {
       this.renderer.render(this.scene, this.camera);
     },
 
-    reset(){
+    /**
+     * Loop through the objects and update their envMap
+     */
+    refreshEnvMap() {
+      var self = this;
+      var tree = this.objectWithEnvMap();
+
+      console.log(tree);
+
+      // Update the objects envMap
+      tree.forEach(function (obj) {
+        obj.material.envMap = self.envMap;
+      });
+    },
+
+    reset() {
       var self = this;
       const children = this.$store.getters.sceneObjects;
 
-      Object.keys(children).forEach(function(item){
+      this.control.enabled = false;
+      this.control.detach();
+
+      Object.keys(children).forEach(function (item) {
         self.scene.remove(children[item]);
       });
+
       // this.render.domElementdocument.addEventListener('dblclick', null, false);
       // Remove all the objects from the scene
       /*
@@ -531,27 +593,44 @@ export default {
     },
 
     /***
+     *
+     */
+    objectWithEnvMap() {
+      const selection = this.$store.state.sceneObjects;
+      var keys = Object.keys(selection);
+      var items = [];
+
+      keys.forEach(function (val) {
+        if (selection[val].material) {
+          items.push(selection[val]);
+        }
+      });
+
+      return items;
+    },
+
+    /***
      * Remove the object from the scene which corresponds to
      * thegiven selector
      * @param selector {String/Number}
      */
-    remove(selector){
+    remove(selector) {
       let obj = null;
       try {
         // Try to remove the object by id
         obj = this.scene.getObjectById(selector);
         this.scene.remove(obj);
-      }catch(e){
+      } catch (e) {
         // Try to remove the object by name if the removal by id
         // failed
         try {
           obj = this.scene.getObjectByName(selector);
           this.scene.remove(obj);
-        }catch(e1){
+        } catch (e1) {
           console.log(e1);
         }
       }
-    }
- },
+    },
+  },
 };
 </script>

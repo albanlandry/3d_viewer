@@ -1,14 +1,8 @@
 <template>
   <v-app>
-    <v-navigation-drawer
-      v-bind:width="325"
-      v-model="drawer" clipped app>
+    <v-navigation-drawer v-bind:width="325" v-model="drawer" clipped app>
       <!-- -->
-      <v-expansion-panels
-        multiple
-        :accordion="true"
-        :tile="true"
-      >
+      <v-expansion-panels multiple :accordion="true" :tile="true">
         <v-expansion-panel @change="updateTree">
           <v-expansion-panel-header>COLLECTION</v-expansion-panel-header>
           <v-expansion-panel-content>
@@ -120,14 +114,13 @@ export default {
       this.$root.$emit("item-selected");
     },
 
-    loadHdr(file){
-      console.log("APP", file);
+    loadHdr(file) {
       this.viewport.loadHdr(file);
     },
 
-    applyMaterial(file){
+    applyMaterial(file) {
       this.viewport.applyMaterial(file);
-    }
+    },
   },
 };
 </script>
