@@ -44,7 +44,62 @@ export default {
     cameraOrtho: null,
     cameraPersp: null,
     envMap: null,
+    gui: null,
   }),
+
+  computed: {
+    envMaps(){
+      const selection = this.$store.state.selected;
+      var self = this;
+
+      // If there is a selectd object which has a material property
+      if(selection && selection.material){
+        return {
+          none: null,
+          reflection: self.envMap,
+          refraction: self.envMap
+        };
+      }
+
+      return {
+        reflection: null,
+        refraction: null
+      };
+    },
+
+    diffuseMaps(){
+      const selection = this.$store.state.selected;
+
+      // If there is a selectd object which has a material property
+      if(selection && selection.material){
+        return {
+          none: null,
+          diffuse: selection.material,
+        };
+      }
+
+      return {
+        reflection: null,
+        refraction: null
+      };
+    },
+
+    roughnessMaps(){
+      const selection = this.$store.state.selected;
+      // If there is a selectd object which has a material property
+      if(selection && selection.material){
+        return {
+          none: null,
+          diffuse: selection.material,
+        };
+      }
+
+      return {
+        reflection: null,
+        refraction: null
+      };
+    },
+  },
 
   mounted: function () {
     // In case the basic material changes
@@ -158,7 +213,7 @@ export default {
       this.scene.add(this.camera);
 
       // The arrowHelper
-      this.scene.add(this.arrowHelper);
+      // this.scene.add(this.arrowHelper);
 
       // Render the scene
       // Start the renderer.
@@ -435,6 +490,12 @@ export default {
       } else {
         this.control.enabled = false;
       }
+
+      // Enable the material panel
+      if(this.gui)
+        this.gui.destroy();
+
+      // this.createGui();
     },
 
     loadHdr(file) {
@@ -489,7 +550,7 @@ export default {
       var extension = file.name.split(".").pop();
       var loader = new window.THREE.TextureLoader();
 
-      if (extension === "mtl") {
+      if (extension.toLowerCase() === "mtl") {
         loader = new window.THREE.MTLLoader();
       }
 
@@ -611,7 +672,7 @@ export default {
 
     /***
      * Remove the object from the scene which corresponds to
-     * thegiven selector
+     * the given selector
      * @param selector {String/Number}
      */
     remove(selector) {
@@ -631,6 +692,106 @@ export default {
         }
       }
     },
+
+    /*** METHODS RELATED TO THE VIEWPORT INNER GUI */
+    createGui(){
+      const selection = this.$store.getters.selected;
+      this.gui = new window.GUI();
+
+      if(selection && selection.material){
+        this.guiMaterial(this.gui, selection, selection.material)
+      }
+    },
+
+    /**** Create material GUI */
+    guiMaterial(gui, mesh, material, geometry){
+      var self = this;
+      var envMapKeys = this.getObjectsKeys( self.envMaps );
+      var diffuseMapKeys = this.getObjectsKeys( self.diffuseMaps );
+      /*
+      var roughnessMapKeys = this.getObjectsKeys( self.roughnessMaps );
+      var matcapKeys = this.getObjectsKeys( matcaps );
+      var alphaMapKeys = this.getObjectsKeys( alphaMaps );
+      var gradientMapKeys = this.getObjectsKeys( gradientMaps );
+      */
+
+      var data = {
+        color: material.color.getHex(),
+        envMaps: envMapKeys[ 0 ],
+        map: diffuseMapKeys[ 0 ],
+        // alphaMap: alphaMapKeys[ 0 ]
+      };
+
+      var folder = gui.addFolder( 'THREE.MeshBasicMaterial' );
+
+      folder.addColor( data, 'color' ).onChange( this.handleColorChange( material.color ) );
+      folder.add( material, 'wireframe' );
+      folder.add( material, 'wireframeLinewidth', 0, 10 );
+      folder.add( material, 'vertexColors' ).onChange( this.needsUpdate( material, geometry ) );
+      folder.add( material, 'fog' );
+
+      folder.add( data, 'envMaps', envMapKeys ).onChange( this.updateTexture( material, 'envMap', self.envMaps ) );
+      folder.add( data, 'map', diffuseMapKeys ).onChange( this.updateTexture( material, 'map', self.diffuseMaps ) );
+      // folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
+      // folder.add( material, 'combine', constants.combine ).onChange( updateCombine( material ) );
+      folder.add( material, 'reflectivity', 0, 1 );
+      folder.add( material, 'refractionRatio', 0, 1 );
+    },
+
+    getObjectsKeys(obj){
+				var keys = [];
+				for ( var key in obj ) {
+					if ( Object.prototype.hasOwnProperty.call(obj, key) ) {
+						keys.push( key );
+					}
+        }
+
+				return keys;
+    },
+
+    handleColorChange( color ) {
+      return function ( value ) {
+
+        if ( typeof value === 'string' ) {
+          value = value.replace( '#', '0x' );
+        }
+
+        color.setHex( value );
+      };
+    },
+
+    needsUpdate( material, geometry ) {
+      var mat = material;
+      return function () {
+        material.vertexColors = mat.vertexColors;
+        material.side = parseInt( material.side ); //Ensure number
+        material.needsUpdate = true;
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.normal.needsUpdate = true;
+        geometry.attributes.color.needsUpdate = true;
+
+      };
+    },
+
+    updateTexture( material, materialKey, textures ) {
+      return function ( key ) {
+        material[ materialKey ] = textures[ key ];
+        material.needsUpdate = true;
+      };
+    },
+
+    exportScene(){
+      // Instantiate a exporter
+      const self = this;
+      var exporter = new window.THREE.GLTFExporter();
+
+      // Parse the input and generate the glTF output
+      exporter.parse( this.scene, function ( gltf ) {
+        console.log( gltf );
+        self.$emit( "scene-export", gltf);
+        // downloadJSON( gltf );
+      }, {maxTextureSize: Infinity});
+    }
   },
 };
 </script>

@@ -8,7 +8,7 @@
       name="open-model-in"
       accept=".fbx, .obj"
     ></v-file-input>
-    <v-btn @click.prevent="openFilePickr" href="#" target="_blank" text>
+    <v-btn @click.prevent="openFilePickr" href="#" target="_blank">
       <span class="mr-2">LOAD</span>
       <v-icon>mdi-import</v-icon>
     </v-btn>
@@ -44,7 +44,8 @@ export default {
 
         var extension = this.file.name.split(".").pop();
 
-        if (extension === "fbx") {
+        if (extension.toLowerCase() === "fbx") {
+          console.log("extension", extension);
           loader = new window.THREE.FBXLoader();
         }
 

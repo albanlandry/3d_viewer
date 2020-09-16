@@ -57,13 +57,18 @@
         />
       </div>
       -->
-      <v-btn>
+        <v-btn>
         <FileModelUploader @file-loaded="fileLoaded"></FileModelUploader>
-      </v-btn>
+        </v-btn>
+        <v-btn @click.prevent="exportScene" href="#" target="_blank" text>
+          <span class="mr-2">SAVE</span>
+          <v-icon>mdi-export</v-icon>
+        </v-btn>
+
     </v-app-bar>
 
     <v-main>
-      <ViewPort ref="viewport" />
+      <ViewPort @scene-export="uploadSceneFile" ref="viewport" />
     </v-main>
   </v-app>
 </template>
@@ -121,6 +126,40 @@ export default {
     applyMaterial(file) {
       this.viewport.applyMaterial(file);
     },
+
+    exportScene(){
+      this.viewport.exportScene();
+    },
+
+    uploadSceneFile(file){
+
+      let data = new FormData();
+      /*
+      data.append('model', file);
+      */
+
+      data.append('model', JSON.stringify( file));
+
+      this.axios.post('http://127.0.0.1:8000/files',
+          data,
+          {
+          headers: {
+              // 'Content-Type': 'application/json',
+              'Content-Type': 'multipart/form-data',
+              /*
+              'Access-Control-Allow-Origin' : '*',
+              'Access-Control-Allow-Headers':  'Content-Type, X-Auth-Token, Authorization, Origin, Lang',
+              'Access-Control-Allow-Methods' : 'GET,PUT,POST,DELETE'
+              */
+          }
+        }
+      ).then(function(data){
+        console.log(data.data);
+      })
+      .catch(function(){
+        console.log('FAILURE!!');
+      });
+    }
   },
 };
 </script>

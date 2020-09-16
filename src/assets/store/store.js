@@ -14,10 +14,10 @@ export const store = new Vuex.Store({
         showMaterial: false,
         selected: null,
         lightTypes: {
-            jf: 0,
-            lf: 1,
-            hf: 2,
-            ff: 3,
+            jf: 1,
+            lf: 2,
+            hf: 3,
+            ff: 4,
         }
     },
 
