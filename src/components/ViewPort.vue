@@ -48,30 +48,30 @@ export default {
   }),
 
   computed: {
-    envMaps(){
+    envMaps() {
       const selection = this.$store.state.selected;
       var self = this;
 
       // If there is a selectd object which has a material property
-      if(selection && selection.material){
+      if (selection && selection.material) {
         return {
           none: null,
           reflection: self.envMap,
-          refraction: self.envMap
+          refraction: self.envMap,
         };
       }
 
       return {
         reflection: null,
-        refraction: null
+        refraction: null,
       };
     },
 
-    diffuseMaps(){
+    diffuseMaps() {
       const selection = this.$store.state.selected;
 
       // If there is a selectd object which has a material property
-      if(selection && selection.material){
+      if (selection && selection.material) {
         return {
           none: null,
           diffuse: selection.material,
@@ -80,14 +80,14 @@ export default {
 
       return {
         reflection: null,
-        refraction: null
+        refraction: null,
       };
     },
 
-    roughnessMaps(){
+    roughnessMaps() {
       const selection = this.$store.state.selected;
       // If there is a selectd object which has a material property
-      if(selection && selection.material){
+      if (selection && selection.material) {
         return {
           none: null,
           diffuse: selection.material,
@@ -96,7 +96,7 @@ export default {
 
       return {
         reflection: null,
-        refraction: null
+        refraction: null,
       };
     },
   },
@@ -159,7 +159,7 @@ export default {
       );
 
       this.scene = new window.THREE.Scene();
-      this.scene.background = new window.THREE.Color(0xdddddd);
+      this.scene.background = new window.THREE.Color(0xeeeeee);
       this.scene.fog = new window.THREE.Fog(0xa0a0a0, 500, 1000);
 
       /***************************** Ground */
@@ -259,6 +259,12 @@ export default {
       this.control.addEventListener("dragging-changed", function (event) {
         self.orbit.enabled = !event.value;
       });
+    },
+
+    REMOVE_TRANSFORM_CONTROL() {
+      this.control.addEventListener("change", null, false);
+      this.control.addEventListener("dragging-changed", null, false);
+      this.control.dispose();
     },
 
     /**
@@ -478,6 +484,7 @@ export default {
         selection &&
         this.$store.state.lightTypes[selection.constructor.name]
       ) {
+        // this.INIT_TRANSFORM_CONTROL();
         this.control.enabled = true;
         // If there is any attached object to the controller
         // We firstly detach it from the later selected
@@ -488,12 +495,14 @@ export default {
         this.control.attach(this.$store.getters.selected);
         console.log("Selected controller attached");
       } else {
+        this.control.detach();
         this.control.enabled = false;
+
+        // if (this.control) this.REMOVE_TRANSFORM_CONTROL();
       }
 
       // Enable the material panel
-      if(this.gui)
-        this.gui.destroy();
+      if (this.gui) this.gui.destroy();
 
       // this.createGui();
     },
@@ -694,20 +703,20 @@ export default {
     },
 
     /*** METHODS RELATED TO THE VIEWPORT INNER GUI */
-    createGui(){
+    createGui() {
       const selection = this.$store.getters.selected;
       this.gui = new window.GUI();
 
-      if(selection && selection.material){
-        this.guiMaterial(this.gui, selection, selection.material)
+      if (selection && selection.material) {
+        this.guiMaterial(this.gui, selection, selection.material);
       }
     },
 
     /**** Create material GUI */
-    guiMaterial(gui, mesh, material, geometry){
+    guiMaterial(gui, mesh, material, geometry) {
       var self = this;
-      var envMapKeys = this.getObjectsKeys( self.envMaps );
-      var diffuseMapKeys = this.getObjectsKeys( self.diffuseMaps );
+      var envMapKeys = this.getObjectsKeys(self.envMaps);
+      var diffuseMapKeys = this.getObjectsKeys(self.diffuseMaps);
       /*
       var roughnessMapKeys = this.getObjectsKeys( self.roughnessMaps );
       var matcapKeys = this.getObjectsKeys( matcaps );
@@ -717,81 +726,93 @@ export default {
 
       var data = {
         color: material.color.getHex(),
-        envMaps: envMapKeys[ 0 ],
-        map: diffuseMapKeys[ 0 ],
+        envMaps: envMapKeys[0],
+        map: diffuseMapKeys[0],
         // alphaMap: alphaMapKeys[ 0 ]
       };
 
-      var folder = gui.addFolder( 'THREE.MeshBasicMaterial' );
+      var folder = gui.addFolder("THREE.MeshBasicMaterial");
 
-      folder.addColor( data, 'color' ).onChange( this.handleColorChange( material.color ) );
-      folder.add( material, 'wireframe' );
-      folder.add( material, 'wireframeLinewidth', 0, 10 );
-      folder.add( material, 'vertexColors' ).onChange( this.needsUpdate( material, geometry ) );
-      folder.add( material, 'fog' );
+      folder
+        .addColor(data, "color")
+        .onChange(this.handleColorChange(material.color));
+      folder.add(material, "wireframe");
+      folder.add(material, "wireframeLinewidth", 0, 10);
+      folder
+        .add(material, "vertexColors")
+        .onChange(this.needsUpdate(material, geometry));
+      folder.add(material, "fog");
 
-      folder.add( data, 'envMaps', envMapKeys ).onChange( this.updateTexture( material, 'envMap', self.envMaps ) );
-      folder.add( data, 'map', diffuseMapKeys ).onChange( this.updateTexture( material, 'map', self.diffuseMaps ) );
+      folder
+        .add(data, "envMaps", envMapKeys)
+        .onChange(this.updateTexture(material, "envMap", self.envMaps));
+      folder
+        .add(data, "map", diffuseMapKeys)
+        .onChange(this.updateTexture(material, "map", self.diffuseMaps));
       // folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
       // folder.add( material, 'combine', constants.combine ).onChange( updateCombine( material ) );
-      folder.add( material, 'reflectivity', 0, 1 );
-      folder.add( material, 'refractionRatio', 0, 1 );
+      folder.add(material, "reflectivity", 0, 1);
+      folder.add(material, "refractionRatio", 0, 1);
     },
 
-    getObjectsKeys(obj){
-				var keys = [];
-				for ( var key in obj ) {
-					if ( Object.prototype.hasOwnProperty.call(obj, key) ) {
-						keys.push( key );
-					}
+    getObjectsKeys(obj) {
+      var keys = [];
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          keys.push(key);
         }
+      }
 
-				return keys;
+      return keys;
     },
 
-    handleColorChange( color ) {
-      return function ( value ) {
-
-        if ( typeof value === 'string' ) {
-          value = value.replace( '#', '0x' );
+    handleColorChange(color) {
+      return function (value) {
+        if (typeof value === "string") {
+          value = value.replace("#", "0x");
         }
 
-        color.setHex( value );
+        color.setHex(value);
       };
     },
 
-    needsUpdate( material, geometry ) {
+    needsUpdate(material, geometry) {
       var mat = material;
       return function () {
         material.vertexColors = mat.vertexColors;
-        material.side = parseInt( material.side ); //Ensure number
+        material.side = parseInt(material.side); //Ensure number
         material.needsUpdate = true;
         geometry.attributes.position.needsUpdate = true;
         geometry.attributes.normal.needsUpdate = true;
         geometry.attributes.color.needsUpdate = true;
-
       };
     },
 
-    updateTexture( material, materialKey, textures ) {
-      return function ( key ) {
-        material[ materialKey ] = textures[ key ];
+    updateTexture(material, materialKey, textures) {
+      return function (key) {
+        material[materialKey] = textures[key];
         material.needsUpdate = true;
       };
     },
 
-    exportScene(){
+    exportScene() {
+      // detach the control
       // Instantiate a exporter
+      this.control.detach();
       const self = this;
       var exporter = new window.THREE.GLTFExporter();
 
       // Parse the input and generate the glTF output
-      exporter.parse( this.scene, function ( gltf ) {
-        console.log( gltf );
-        self.$emit( "scene-export", gltf);
-        // downloadJSON( gltf );
-      }, {maxTextureSize: Infinity});
-    }
+      exporter.parse(
+        this.scene,
+        function (gltf) {
+          console.log(gltf);
+          self.$emit("scene-export", gltf);
+          // downloadJSON( gltf );
+        },
+        { maxTextureSize: Infinity }
+      );
+    },
   },
 };
 </script>
