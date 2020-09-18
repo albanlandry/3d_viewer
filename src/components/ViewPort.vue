@@ -581,7 +581,7 @@ export default {
                 map: texture,
               });
 
-              console.log("MAterial: ", material);
+              console.log("Material: ", material);
               // Set the material as the selected object's material
               // self.setMaterial(selection, material);
               selection.material = material;
@@ -797,8 +797,10 @@ export default {
 
     exportScene() {
       // detach the control
-      // Instantiate a exporter
       this.control.detach();
+      this.control.enabled = false;
+
+      // Instantiate a exporter
       const self = this;
       var exporter = new window.THREE.GLTFExporter();
 

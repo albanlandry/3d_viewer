@@ -55,7 +55,7 @@ export default {
             function (obj) {
               obj["filename"] = self.file.name.split(".")[0];
               // Event when the file is loaded
-              console.log(obj);
+              // console.log(obj);
               self.$emit("file-loaded", obj);
             },
 

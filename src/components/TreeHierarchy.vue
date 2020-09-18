@@ -1,11 +1,17 @@
 <template>
-  <v-treeview v-model="selection" :dense="true" activatable :items="items">
-    <template v-slot:prepend="{ item}">
+  <v-treeview
+    @update:active="selectItem"
+    v-model="selection"
+    :dense="true"
+    activatable
+    :items="items"
+  >
+    <template v-slot:prepend="{ item }">
       <v-icon v-if="!item.children">{{ types[item.type] }}</v-icon>
       <v-icon v-if="item.children">mdi-shape</v-icon>
     </template>
     <template slot="label" slot-scope="{ item }">
-      <a @click="selectItem(item.id)">{{ item.name }}</a>
+      <a>{{ item.name }}</a>
     </template>
   </v-treeview>
 </template>
@@ -38,9 +44,11 @@ export default {
       this.$store.commit("selectItem", selection);
     },
 
-    selectItem(id) {
-      this.$store.commit("selectItem", id);
-      this.$root.$emit("item-selected");
+    selectItem(ids) {
+      if (ids.length > 0) {
+        this.$store.commit("selectItem", ids[0]);
+        this.$root.$emit("item-selected");
+      }
     },
 
     getItems(sceneTree) {
