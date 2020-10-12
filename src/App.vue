@@ -140,17 +140,13 @@ export default {
 
       data.append('model', JSON.stringify( file));
 
-      this.axios.post('http://127.0.0.1:8000/files',
+      this.axios.post(/*'http://127.0.0.1:8000/files'*/
+          "/viewer/backend/public/files",
           data,
           {
           headers: {
               // 'Content-Type': 'application/json',
               'Content-Type': 'multipart/form-data',
-              /*
-              'Access-Control-Allow-Origin' : '*',
-              'Access-Control-Allow-Headers':  'Content-Type, X-Auth-Token, Authorization, Origin, Lang',
-              'Access-Control-Allow-Methods' : 'GET,PUT,POST,DELETE'
-              */
           }
         }
       ).then(function(data){

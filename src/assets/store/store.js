@@ -6,19 +6,31 @@ Vue.use(Vuex);
 export const store = new Vuex.Store({
     state: {
         sceneTree: {},
+
         default_material: {
             color: 0xbbbbbb,
             flatShading: true
         },
+
         sceneObjects: {},
+
         showMaterial: false,
+
         selected: null,
+
         lightTypes: {
             jf: 1,
             lf: 2,
             hf: 3,
             ff: 4,
-        }
+        },
+
+        settings: {
+            roughness: 0.0,
+            metalness: 0.0,
+            exposure: 1.0,
+            ambientIntensity: 1.0,
+        },
     },
 
     mutations: {

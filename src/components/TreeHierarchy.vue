@@ -52,7 +52,6 @@ export default {
     },
 
     getItems(sceneTree) {
-      // console.log('Get-Items', sceneTree);
       var items = [];
 
       for (const [key] of Object.entries(sceneTree)) {
@@ -115,22 +114,17 @@ export default {
   },
 
   created() {
-    // console.log("TreeView Created", this)
     var self = this;
     // Listening to model-loaded events
     this.$root.$on("model-loaded", () => {
       // Update the list of item
       self.updateItem();
-      // console.log("EVENT EMITTED", self.items);
-      // console.log("Store", self.$store.state.sceneTree);
     });
   },
 
   computed: {
     selected() {
       if (!this.active.length) return undefined;
-
-      // alert(this.active);
 
       return this.$store.getters.items;
     },

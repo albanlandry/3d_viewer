@@ -129,6 +129,204 @@ export default {
   },
 
   methods: {
+    animate: function () {
+      requestAnimationFrame(this.animate);
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    /**
+     * Applies the current material to the selected object in the scene
+     * @param file {File}
+     */
+    applyMaterial(file) {
+      var self = this;
+      var selection = this.$store.getters.selected;
+      // console.log(file);
+      // Initialize the texture loader
+      var extension = file.name.split(".").pop();
+      var loader = new window.THREE.TextureLoader();
+
+      if (extension.toLowerCase() === "mtl") {
+        loader = new window.THREE.MTLLoader();
+      }
+
+      // We apply the material only if the selected element is a Mesh
+      // We alson check whether the give file is a valid file
+      // to perform the material mapping
+      if (
+        selection &&
+        selection instanceof window.THREE.Mesh
+        // || selection.constructor.name === "Jc"
+      ) {
+        if (file) {
+          var reader = new FileReader();
+
+          reader.onload = function (e) {
+            loader.load(e.target.result, function (texture) {
+              // We create the material when the texture is loaded
+              var material = new window.THREE.MeshPhongMaterial({
+                map: texture,
+              });
+
+              console.log("Material: ", material);
+              // Set the material as the selected object's material
+              // self.setMaterial(selection, material);
+              selection.material = material;
+
+              // Refresh the scene
+              self.render();
+            });
+          };
+
+          reader.readAsDataURL(file);
+        }
+      }
+    },
+
+    /****
+     * Attach the transform to the currently selected object
+     */
+    attachTransfContrller() {
+      const selection = this.$store.getters.selected;
+      if (
+        selection &&
+        this.$store.state.lightTypes[selection.constructor.name]
+      ) {
+        // this.INIT_TRANSFORM_CONTROL();
+        this.control.enabled = true;
+        // If there is any attached object to the controller
+        // We firstly detach it from the later selected
+        this.control.detach();
+
+        // console.log(this.$store.getters.selected);
+        // Then attach it to the currently selected object
+        this.control.attach(this.$store.getters.selected);
+      } else {
+        this.control.detach();
+        this.control.enabled = false;
+
+        // if (this.control) this.REMOVE_TRANSFORM_CONTROL();
+      }
+
+      // Enable the material panel
+      if (this.gui) this.gui.destroy();
+
+      // this.createGui();
+    },
+
+    /** */
+    changeBasicMaterial(color) {
+      // Update the material of the selected element
+      if (this.$store.state.selected) {
+        this.setMaterial(
+          this.$store.state.selected,
+          new window.THREE.MeshPhongMaterial({
+            color: new window.THREE.Color(
+              `rgb(${color.r}, ${color.g}, ${color.b})`
+            ),
+          })
+        );
+      }
+    },
+
+    /*** METHODS RELATED TO THE VIEWPORT INNER GUI */
+    createGui() {
+      const selection = this.$store.getters.selected;
+      this.gui = new window.GUI();
+
+      if (selection && selection.material) {
+        this.guiMaterial(this.gui, selection, selection.material);
+      }
+    },
+
+    exportScene() {
+      // detach the control
+      this.control.detach();
+      this.control.enabled = false;
+
+      // Instantiate a exporter
+      const self = this;
+      var exporter = new window.THREE.GLTFExporter();
+
+      // Parse the input and generate the glTF output
+      exporter.parse(
+        this.scene,
+        function (gltf) {
+          console.log(gltf);
+          self.$emit("scene-export", gltf);
+          // downloadJSON( gltf );
+        },
+        { maxTextureSize: Infinity }
+      );
+    },
+
+    /** */
+    getObjectsKeys(obj) {
+      var keys = [];
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          keys.push(key);
+        }
+      }
+
+      return keys;
+    },
+
+    /**** Create material GUI */
+    guiMaterial(gui, mesh, material, geometry) {
+      var self = this;
+      var envMapKeys = this.getObjectsKeys(self.envMaps);
+      var diffuseMapKeys = this.getObjectsKeys(self.diffuseMaps);
+      /*
+      var roughnessMapKeys = this.getObjectsKeys( self.roughnessMaps );
+      var matcapKeys = this.getObjectsKeys( matcaps );
+      var alphaMapKeys = this.getObjectsKeys( alphaMaps );
+      var gradientMapKeys = this.getObjectsKeys( gradientMaps );
+      */
+
+      var data = {
+        color: material.color.getHex(),
+        envMaps: envMapKeys[0],
+        map: diffuseMapKeys[0],
+        // alphaMap: alphaMapKeys[ 0 ]
+      };
+
+      var folder = gui.addFolder("THREE.MeshBasicMaterial");
+
+      folder
+        .addColor(data, "color")
+        .onChange(this.handleColorChange(material.color));
+      folder.add(material, "wireframe");
+      folder.add(material, "wireframeLinewidth", 0, 10);
+      folder
+        .add(material, "vertexColors")
+        .onChange(this.needsUpdate(material, geometry));
+      folder.add(material, "fog");
+
+      folder
+        .add(data, "envMaps", envMapKeys)
+        .onChange(this.updateTexture(material, "envMap", self.envMaps));
+      folder
+        .add(data, "map", diffuseMapKeys)
+        .onChange(this.updateTexture(material, "map", self.diffuseMaps));
+      // folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
+      // folder.add( material, 'combine', constants.combine ).onChange( updateCombine( material ) );
+      folder.add(material, "reflectivity", 0, 1);
+      folder.add(material, "refractionRatio", 0, 1);
+    },
+
+    /** */
+    handleColorChange(color) {
+      return function (value) {
+        if (typeof value === "string") {
+          value = value.replace("#", "0x");
+        }
+
+        color.setHex(value);
+      };
+    },
+
+    /** */
     init: function () {
       // Set the scene size.
       var canvas = document.querySelector("#mainCanvas");
@@ -241,32 +439,6 @@ export default {
       this.INIT_WINDOW_LISTENERS();
     }, // init
 
-    /******
-     * Initialize the basic behaviour of the transforma controller
-     */
-    INIT_TRANSFORM_CONTROL() {
-      var self = this;
-      this.control = new window.THREE.TransformControls(
-        this.camera,
-        this.renderer.domElement
-      );
-
-      /************** EVENTS LISTENERS *************/
-      this.control.addEventListener("change", function () {
-        self.renderer.render(self.scene, self.camera);
-      });
-
-      this.control.addEventListener("dragging-changed", function (event) {
-        self.orbit.enabled = !event.value;
-      });
-    },
-
-    REMOVE_TRANSFORM_CONTROL() {
-      this.control.addEventListener("change", null, false);
-      this.control.addEventListener("dragging-changed", null, false);
-      this.control.dispose();
-    },
-
     /**
      * Initialize all the listening funcitonaliteis related to the window
      * */
@@ -371,22 +543,24 @@ export default {
       });
     },
 
-    animate: function () {
-      requestAnimationFrame(this.animate);
-      this.renderer.render(this.scene, this.camera);
-    },
+    /******
+     * Initialize the basic behaviour of the transforma controller
+     */
+    INIT_TRANSFORM_CONTROL() {
+      var self = this;
+      this.control = new window.THREE.TransformControls(
+        this.camera,
+        this.renderer.domElement
+      );
 
-    onWindowResize: function () {
-      this.WIDTH = this.container.offsetWidth;
-      this.HEIGHT = this.container.offsetHeight;
+      /************** EVENTS LISTENERS *************/
+      this.control.addEventListener("change", function () {
+        self.renderer.render(self.scene, self.camera);
+      });
 
-      this.camera.aspect = window.innerWidth / window.innerHeight;
-      this.camera.updateProjectionMatrix();
-
-      this.camera.updateProjectionMatrix();
-      this.renderer.setSize(this.WIDTH, this.HEIGHT);
-
-      this.render();
+      this.control.addEventListener("dragging-changed", function (event) {
+        self.orbit.enabled = !event.value;
+      });
     },
 
     /**
@@ -417,96 +591,7 @@ export default {
       this.$root.$emit("model-loaded");
     },
 
-    setMaterial: function (obj, material) {
-      material.roughness = 0.5;
-      material.metalness = 0.5;
-
-      obj.traverse(function (child) {
-        if (child instanceof window.THREE.Mesh) {
-          child.material = material;
-        }
-      });
-    },
-
-    changeBasicMaterial(color) {
-      // Update the material of the selected element
-      if (this.$store.state.selected) {
-        this.setMaterial(
-          this.$store.state.selected,
-          new window.THREE.MeshPhongMaterial({
-            color: new window.THREE.Color(
-              `rgb(${color.r}, ${color.g}, ${color.b})`
-            ),
-          })
-        );
-      }
-    },
-
-    newLight(id) {
-      var light = null;
-
-      // For 0, create a PointLight
-      if (id == 0) {
-        light = new window.THREE.PointLight(0xffffff, 1, 100);
-        light.name = "Point." + light.id;
-      }
-
-      // For 0, create a Directional light
-      if (id == 1) {
-        light = new window.THREE.DirectionalLight(0xffffff, 0.5);
-        light.name = "Directional." + light.id;
-      }
-
-      // For 0, create a Spot light
-      if (id == 2) {
-        light = new window.THREE.SpotLight(0xffffff);
-        light.name = "Spot." + light.id;
-      }
-
-      // For 0, create a Hemisphere light
-      if (id == 3) {
-        light = new window.THREE.HemisphereLight(0xffffbb, 0x080820, 1);
-        light.name = "Hemisphere." + light.id;
-      }
-
-      // We load the light to the scene only if it was successfully created
-      if (light) {
-        this.load(light);
-      } else throw new Error("INCORRECT ID PROVIDED");
-    },
-
-    /****
-     * Attach the transform to the currently selected object
-     */
-    attachTransfContrller() {
-      const selection = this.$store.getters.selected;
-      if (
-        selection &&
-        this.$store.state.lightTypes[selection.constructor.name]
-      ) {
-        // this.INIT_TRANSFORM_CONTROL();
-        this.control.enabled = true;
-        // If there is any attached object to the controller
-        // We firstly detach it from the later selected
-        this.control.detach();
-
-        console.log(this.$store.getters.selected);
-        // Then attach it to the currently selected object
-        this.control.attach(this.$store.getters.selected);
-        console.log("Selected controller attached");
-      } else {
-        this.control.detach();
-        this.control.enabled = false;
-
-        // if (this.control) this.REMOVE_TRANSFORM_CONTROL();
-      }
-
-      // Enable the material panel
-      if (this.gui) this.gui.destroy();
-
-      // this.createGui();
-    },
-
+    /** */
     loadHdr(file) {
       var self = this;
       var loader = null;
@@ -547,82 +632,83 @@ export default {
       }
     },
 
-    /**
-     * Applies the current material to the selected object in the scene
-     * @param file {File}
-     */
-    applyMaterial(file) {
-      var self = this;
-      var selection = this.$store.getters.selected;
-      // console.log(file);
-      // Initialize the texture loader
-      var extension = file.name.split(".").pop();
-      var loader = new window.THREE.TextureLoader();
+    /** */
+    newLight(id) {
+      var light = null;
 
-      if (extension.toLowerCase() === "mtl") {
-        loader = new window.THREE.MTLLoader();
+      // For 0, create a PointLight
+      if (id == 0) {
+        light = new window.THREE.PointLight(0xffffff, 1, 100);
+        light.name = "Point." + light.id;
       }
 
-      // We apply the material only if the selected element is a Mesh
-      // We alson check whether the give file is a valid file
-      // to perform the material mapping
-      if (
-        selection &&
-        selection instanceof window.THREE.Mesh
-        // || selection.constructor.name === "Jc"
-      ) {
-        if (file) {
-          var reader = new FileReader();
+      // For 0, create a Directional light
+      if (id == 1) {
+        light = new window.THREE.DirectionalLight(0xffffff, 0.5);
+        light.name = "Directional." + light.id;
+      }
 
-          reader.onload = function (e) {
-            loader.load(e.target.result, function (texture) {
-              // We create the material when the texture is loaded
-              var material = new window.THREE.MeshPhongMaterial({
-                map: texture,
-              });
+      // For 0, create a Spot light
+      if (id == 2) {
+        light = new window.THREE.SpotLight(0xffffff);
+        light.name = "Spot." + light.id;
+      }
 
-              console.log("Material: ", material);
-              // Set the material as the selected object's material
-              // self.setMaterial(selection, material);
-              selection.material = material;
+      // For 0, create a Hemisphere light
+      if (id == 3) {
+        light = new window.THREE.HemisphereLight(0xffffbb, 0x080820, 1);
+        light.name = "Hemisphere." + light.id;
+      }
 
-              // Refresh the scene
-              self.render();
-            });
-          };
+      // We load the light to the scene only if it was successfully created
+      if (light) {
+        this.load(light);
+      } else throw new Error("INCORRECT ID PROVIDED");
+    },
 
-          reader.readAsDataURL(file);
+    needsUpdate(material, geometry) {
+      var mat = material;
+      return function () {
+        material.vertexColors = mat.vertexColors;
+        material.side = parseInt(material.side); //Ensure number
+        material.needsUpdate = true;
+        geometry.attributes.position.needsUpdate = true;
+        geometry.attributes.normal.needsUpdate = true;
+        geometry.attributes.color.needsUpdate = true;
+      };
+    },
+
+    /** */
+    onWindowResize: function () {
+      this.WIDTH = this.container.offsetWidth;
+      this.HEIGHT = this.container.offsetHeight;
+
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(this.WIDTH, this.HEIGHT);
+
+      this.render();
+    },
+
+    /***
+     *
+     */
+    objectWithEnvMap() {
+      const selection = this.$store.state.sceneObjects;
+      var keys = Object.keys(selection);
+      var items = [];
+
+      // We consider only the objects with a material
+      keys.forEach(function (val) {
+        if (selection[val].material) {
+          console.log(selection[val]);
+          items.push(selection[val]);
         }
-      }
-    },
+      });
 
-    /***
-     * Update the color of the currently selected light
-     */
-    updateLightColor(color) {
-      const c = color.rgba;
-
-      const selection = this.$store.state.selected;
-      if (selection) {
-        selection.color = new window.THREE.Color(`rgb(${c.r}, ${c.g}, ${c.b})`);
-      }
-    },
-
-    /***
-     * Update the power of the currently selected light
-     */
-    updateLightPower(value) {
-      const selection = this.$store.state.selected;
-      if (selection) {
-        selection.intensity = value;
-      }
-    },
-
-    /***
-     * Refresh the scene
-     */
-    render() {
-      this.renderer.render(this.scene, this.camera);
+      return items;
     },
 
     /**
@@ -638,45 +724,6 @@ export default {
       tree.forEach(function (obj) {
         obj.material.envMap = self.envMap;
       });
-    },
-
-    reset() {
-      var self = this;
-      const children = this.$store.getters.sceneObjects;
-
-      this.control.enabled = false;
-      this.control.detach();
-
-      Object.keys(children).forEach(function (item) {
-        self.scene.remove(children[item]);
-      });
-
-      // this.render.domElementdocument.addEventListener('dblclick', null, false);
-      // Remove all the objects from the scene
-      /*
-      this.scene.traverse(function(child){
-        self.scene.remove(child);
-      });
-      */
-
-      this.$store.commit("reset");
-    },
-
-    /***
-     *
-     */
-    objectWithEnvMap() {
-      const selection = this.$store.state.sceneObjects;
-      var keys = Object.keys(selection);
-      var items = [];
-
-      keys.forEach(function (val) {
-        if (selection[val].material) {
-          items.push(selection[val]);
-        }
-      });
-
-      return items;
     },
 
     /***
@@ -702,90 +749,75 @@ export default {
       }
     },
 
-    /*** METHODS RELATED TO THE VIEWPORT INNER GUI */
-    createGui() {
-      const selection = this.$store.getters.selected;
-      this.gui = new window.GUI();
-
-      if (selection && selection.material) {
-        this.guiMaterial(this.gui, selection, selection.material);
-      }
+    /** */
+    REMOVE_TRANSFORM_CONTROL() {
+      this.control.addEventListener("change", null, false);
+      this.control.addEventListener("dragging-changed", null, false);
+      this.control.dispose();
     },
 
-    /**** Create material GUI */
-    guiMaterial(gui, mesh, material, geometry) {
+    /***
+     * Refresh the scene
+     */
+    render() {
+      this.renderer.render(this.scene, this.camera);
+    },
+
+    /** */
+    reset() {
       var self = this;
-      var envMapKeys = this.getObjectsKeys(self.envMaps);
-      var diffuseMapKeys = this.getObjectsKeys(self.diffuseMaps);
+      const children = this.$store.getters.sceneObjects;
+
+      this.control.enabled = false;
+      this.control.detach();
+
+      Object.keys(children).forEach(function (item) {
+        self.scene.remove(children[item]);
+      });
+
+      // this.render.domElementdocument.addEventListener('dblclick', null, false);
+      // Remove all the objects from the scene
       /*
-      var roughnessMapKeys = this.getObjectsKeys( self.roughnessMaps );
-      var matcapKeys = this.getObjectsKeys( matcaps );
-      var alphaMapKeys = this.getObjectsKeys( alphaMaps );
-      var gradientMapKeys = this.getObjectsKeys( gradientMaps );
+      this.scene.traverse(function(child){
+        self.scene.remove(child);
+      });
       */
 
-      var data = {
-        color: material.color.getHex(),
-        envMaps: envMapKeys[0],
-        map: diffuseMapKeys[0],
-        // alphaMap: alphaMapKeys[ 0 ]
-      };
-
-      var folder = gui.addFolder("THREE.MeshBasicMaterial");
-
-      folder
-        .addColor(data, "color")
-        .onChange(this.handleColorChange(material.color));
-      folder.add(material, "wireframe");
-      folder.add(material, "wireframeLinewidth", 0, 10);
-      folder
-        .add(material, "vertexColors")
-        .onChange(this.needsUpdate(material, geometry));
-      folder.add(material, "fog");
-
-      folder
-        .add(data, "envMaps", envMapKeys)
-        .onChange(this.updateTexture(material, "envMap", self.envMaps));
-      folder
-        .add(data, "map", diffuseMapKeys)
-        .onChange(this.updateTexture(material, "map", self.diffuseMaps));
-      // folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
-      // folder.add( material, 'combine', constants.combine ).onChange( updateCombine( material ) );
-      folder.add(material, "reflectivity", 0, 1);
-      folder.add(material, "refractionRatio", 0, 1);
+      this.$store.commit("reset");
     },
 
-    getObjectsKeys(obj) {
-      var keys = [];
-      for (var key in obj) {
-        if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          keys.push(key);
+    /** */
+    setMaterial: function (obj, material) {
+      material.roughness = 0.5;
+      material.metalness = 0.5;
+
+      obj.traverse(function (child) {
+        if (child instanceof window.THREE.Mesh) {
+          child.material = material;
         }
+      });
+    },
+
+    /***
+     * Update the color of the currently selected light
+     */
+    updateLightColor(color) {
+      const c = color.rgba;
+
+      const selection = this.$store.state.selected;
+      if (selection) {
+        selection.color = new window.THREE.Color(`rgb(${c.r}, ${c.g}, ${c.b})`);
       }
-
-      return keys;
     },
 
-    handleColorChange(color) {
-      return function (value) {
-        if (typeof value === "string") {
-          value = value.replace("#", "0x");
-        }
-
-        color.setHex(value);
-      };
-    },
-
-    needsUpdate(material, geometry) {
-      var mat = material;
-      return function () {
-        material.vertexColors = mat.vertexColors;
-        material.side = parseInt(material.side); //Ensure number
-        material.needsUpdate = true;
-        geometry.attributes.position.needsUpdate = true;
-        geometry.attributes.normal.needsUpdate = true;
-        geometry.attributes.color.needsUpdate = true;
-      };
+    /***
+     * Update the power of the currently selected light
+     */
+    updateLightPower(value) {
+      const selection = this.$store.state.selected;
+      if (selection) {
+        selection.intensity = value;
+      }
     },
 
     updateTexture(material, materialKey, textures) {
@@ -793,27 +825,6 @@ export default {
         material[materialKey] = textures[key];
         material.needsUpdate = true;
       };
-    },
-
-    exportScene() {
-      // detach the control
-      this.control.detach();
-      this.control.enabled = false;
-
-      // Instantiate a exporter
-      const self = this;
-      var exporter = new window.THREE.GLTFExporter();
-
-      // Parse the input and generate the glTF output
-      exporter.parse(
-        this.scene,
-        function (gltf) {
-          console.log(gltf);
-          self.$emit("scene-export", gltf);
-          // downloadJSON( gltf );
-        },
-        { maxTextureSize: Infinity }
-      );
     },
   },
 };
