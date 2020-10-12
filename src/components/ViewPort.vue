@@ -45,6 +45,53 @@ export default {
     cameraPersp: null,
     envMap: null,
     gui: null,
+    ambientLight: new window.THREE.AmbientLight( 0x000000 ),
+    constants: {
+
+				combine: {
+					'THREE.MultiplyOperation': window.THREE.MultiplyOperation,
+					'THREE.MixOperation': window.THREE.MixOperation,
+					'THREE.AddOperation': window.THREE.AddOperation
+				},
+
+				side: {
+					'THREE.FrontSide': window.THREE.FrontSide,
+					'THREE.BackSide': window.THREE.BackSide,
+					'THREE.DoubleSide': window.THREE.DoubleSide
+				},
+
+				blendingMode: {
+					'THREE.NoBlending': window.THREE.NoBlending,
+					'THREE.NormalBlending': window.THREE.NormalBlending,
+					'THREE.AdditiveBlending': window.THREE.AdditiveBlending,
+					'THREE.SubtractiveBlending': window.THREE.SubtractiveBlending,
+					'THREE.MultiplyBlending': window.THREE.MultiplyBlending,
+					'THREE.CustomBlending': window.THREE.CustomBlending
+				},
+
+				equations: {
+					'THREE.AddEquation': window.THREE.AddEquation,
+					'THREE.SubtractEquation': window.THREE.SubtractEquation,
+					'THREE.ReverseSubtractEquation': window.THREE.ReverseSubtractEquation
+				},
+
+				destinationFactors: {
+					'THREE.ZeroFactor': window.THREE.ZeroFactor,
+					'THREE.OneFactor': window.THREE.OneFactor,
+					'THREE.SrcColorFactor': window.THREE.SrcColorFactor,
+					'THREE.OneMinusSrcColorFactor': window.THREE.OneMinusSrcColorFactor,
+					'THREE.SrcAlphaFactor': window.THREE.SrcAlphaFactor,
+					'THREE.OneMinusSrcAlphaFactor': window.THREE.OneMinusSrcAlphaFactor,
+					'THREE.DstAlphaFactor': window.THREE.DstAlphaFactor,
+					'THREE.OneMinusDstAlphaFactor': window.THREE.OneMinusDstAlphaFactor
+				},
+
+				sourceFactors: {
+					'THREE.DstColorFactor': window.THREE.DstColorFactor,
+					'THREE.OneMinusDstColorFactor': window.THREE.OneMinusDstColorFactor,
+					'THREE.SrcAlphaSaturateFactor': window.THREE.SrcAlphaSaturateFactor
+				}
+			}
   }),
 
   computed: {
@@ -210,8 +257,7 @@ export default {
 
       // Enable the material panel
       if (this.gui) this.gui.destroy();
-
-      // this.createGui();
+      this.createGui();
     },
 
     /** */
@@ -232,10 +278,21 @@ export default {
     /*** METHODS RELATED TO THE VIEWPORT INNER GUI */
     createGui() {
       const selection = this.$store.getters.selected;
-      this.gui = new window.GUI();
+      this.gui = new window.dat.GUI();
+      this.gui.domElement.style.position = 'fixed';
+      this.gui.domElement.style.top = '80px';
+      this.gui.domElement.style.right = '10px';
 
+      console.log(this.gui.domElement.style);
+      // Update the gui elements
+      this.guiScene(this.gui, this.scene);
+
+      console.log(selection);
       if (selection && selection.material) {
-        this.guiMaterial(this.gui, selection, selection.material);
+        var material = new window.THREE.MeshPhongMaterial( selection.material );
+        this.guiMaterial( this.gui, selection, material, selection.geometry );
+        this.guiMeshPhongMaterial( this.gui, selection, material, selection.geometry );
+        // this.guiMaterial(this.gui, selection, selection.material);
       }
     },
 
@@ -272,50 +329,105 @@ export default {
       return keys;
     },
 
-    /**** Create material GUI */
+    /**
+     * Creates the gui that displays the details of a material.
+     * Bind the corresponds events
+     */
     guiMaterial(gui, mesh, material, geometry) {
       var self = this;
-      var envMapKeys = this.getObjectsKeys(self.envMaps);
-      var diffuseMapKeys = this.getObjectsKeys(self.diffuseMaps);
-      /*
-      var roughnessMapKeys = this.getObjectsKeys( self.roughnessMaps );
-      var matcapKeys = this.getObjectsKeys( matcaps );
-      var alphaMapKeys = this.getObjectsKeys( alphaMaps );
-      var gradientMapKeys = this.getObjectsKeys( gradientMaps );
-      */
+      var folder = gui.addFolder( 'THREE.Material' );
 
-      var data = {
-        color: material.color.getHex(),
-        envMaps: envMapKeys[0],
-        map: diffuseMapKeys[0],
-        // alphaMap: alphaMapKeys[ 0 ]
-      };
-
-      var folder = gui.addFolder("THREE.MeshBasicMaterial");
-
-      folder
-        .addColor(data, "color")
-        .onChange(this.handleColorChange(material.color));
-      folder.add(material, "wireframe");
-      folder.add(material, "wireframeLinewidth", 0, 10);
-      folder
-        .add(material, "vertexColors")
-        .onChange(this.needsUpdate(material, geometry));
-      folder.add(material, "fog");
-
-      folder
-        .add(data, "envMaps", envMapKeys)
-        .onChange(this.updateTexture(material, "envMap", self.envMaps));
-      folder
-        .add(data, "map", diffuseMapKeys)
-        .onChange(this.updateTexture(material, "map", self.diffuseMaps));
-      // folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
-      // folder.add( material, 'combine', constants.combine ).onChange( updateCombine( material ) );
-      folder.add(material, "reflectivity", 0, 1);
-      folder.add(material, "refractionRatio", 0, 1);
+      folder.add( material, 'transparent' );
+      folder.add( material, 'opacity', 0, 1 ).step( 0.01 );
+      // folder.add( material, 'blending', constants.blendingMode );
+      // folder.add( material, 'blendSrc', constants.destinationFactors );
+      // folder.add( material, 'blendDst', constants.destinationFactors );
+      // folder.add( material, 'blendEquation', constants.equations );
+      folder.add( material, 'depthTest' );
+      folder.add( material, 'depthWrite' );
+      // folder.add( material, 'polygonOffset' );
+      // folder.add( material, 'polygonOffsetFactor' );
+      // folder.add( material, 'polygonOffsetUnits' );
+      folder.add( material, 'alphaTest', 0, 1 ).step( 0.01 ).onChange( self.needsUpdate( material, geometry ) );
+      folder.add( material, 'visible' );
+      folder.add( material, 'side', self.constants.side ).onChange( self.needsUpdate( material, geometry ) );
     },
 
-    /** */
+    guiMeshPhongMaterial( gui, mesh, material, geometry ) {
+        var self = this;
+				var data = {
+					color: material.color.getHex(),
+					emissive: material.emissive.getHex(),
+					specular: material.specular.getHex(),
+          /*
+          envMaps: envMapKeys[ 0 ],
+					map: diffuseMapKeys[ 0 ],
+          alphaMap: alphaMapKeys[ 0 ]
+          */
+				};
+
+				var folder = gui.addFolder( 'THREE.MeshPhongMaterial' );
+
+				folder.addColor( data, 'color' ).onChange( self.handleColorChange( material.color ) );
+				folder.addColor( data, 'emissive' ).onChange( self.handleColorChange( material.emissive ) );
+				folder.addColor( data, 'specular' ).onChange( self.handleColorChange( material.specular ) );
+
+				folder.add( material, 'shininess', 0, 100 );
+				folder.add( material, 'flatShading' ).onChange( self.needsUpdate( material, geometry ) );
+				folder.add( material, 'wireframe' );
+				folder.add( material, 'wireframeLinewidth', 0, 10 );
+				folder.add( material, 'vertexColors' ).onChange( self.needsUpdate( material, geometry ) );
+				folder.add( material, 'fog' );
+        /*
+        folder.add( data, 'envMaps', envMapKeys ).onChange( updateTexture( material, 'envMap', envMaps ) );
+				folder.add( data, 'map', diffuseMapKeys ).onChange( updateTexture( material, 'map', diffuseMaps ) );
+        folder.add( data, 'alphaMap', alphaMapKeys ).onChange( updateTexture( material, 'alphaMap', alphaMaps ) );
+        */
+				folder.add( material, 'combine', self.constants.combine ).onChange( self.updateCombine( material ) );
+				folder.add( material, 'reflectivity', 0, 1 );
+				folder.add( material, 'refractionRatio', 0, 1 );
+		},
+
+    /** The scene folder */
+		guiScene( gui, scene ) {
+				var folder = gui.addFolder( 'Scene' );
+
+				var data = {
+					background: '#000000',
+					'ambient light': this.ambientLight.color.getHex()
+				};
+
+				folder.addColor( data, 'ambient light' ).onChange( this.handleColorChange( this.ambientLight.color ) );
+
+				this.guiSceneFog( folder, scene );
+    },
+
+    guiSceneFog( folder, scene ) {
+				var fogFolder = folder.addFolder( 'scene.fog' );
+        var fog = new window.THREE.Fog( 0x3f7b9d, 0, 60 );
+
+				var data = {
+					fog: {
+						'THREE.Fog()': false,
+						'scene.fog.color': fog.color.getHex()
+					}
+				};
+
+				fogFolder.add( data.fog, 'THREE.Fog()' ).onChange( function ( useFog ) {
+					if ( useFog ) {
+						scene.fog = fog;
+					} else {
+						scene.fog = null;
+					}
+				} );
+
+				fogFolder.addColor( data.fog, 'scene.fog.color' ).onChange( this.handleColorChange( fog.color ) );
+
+		},
+
+    /**
+     * Handles gui color changes
+     */
     handleColorChange(color) {
       return function (value) {
         if (typeof value === "string") {
@@ -347,6 +459,7 @@ export default {
         0.01,
         30000
       );
+
       this.cameraOrtho = new window.THREE.OrthographicCamera(
         -600 * aspect,
         600 * aspect,
@@ -438,6 +551,26 @@ export default {
       // Centralized window listeners initialization
       this.INIT_WINDOW_LISTENERS();
     }, // init
+
+    /******
+     * Initialize the basic behaviour of the transforma controller
+     */
+    INIT_TRANSFORM_CONTROL() {
+      var self = this;
+      this.control = new window.THREE.TransformControls(
+        this.camera,
+        this.renderer.domElement
+      );
+
+      /************** EVENTS LISTENERS *************/
+      this.control.addEventListener("change", function () {
+        self.renderer.render(self.scene, self.camera);
+      });
+
+      this.control.addEventListener("dragging-changed", function (event) {
+        self.orbit.enabled = !event.value;
+      });
+    },
 
     /**
      * Initialize all the listening funcitonaliteis related to the window
@@ -540,26 +673,6 @@ export default {
             self.control.setScaleSnap(null);
             break;
         }
-      });
-    },
-
-    /******
-     * Initialize the basic behaviour of the transforma controller
-     */
-    INIT_TRANSFORM_CONTROL() {
-      var self = this;
-      this.control = new window.THREE.TransformControls(
-        this.camera,
-        this.renderer.domElement
-      );
-
-      /************** EVENTS LISTENERS *************/
-      this.control.addEventListener("change", function () {
-        self.renderer.render(self.scene, self.camera);
-      });
-
-      this.control.addEventListener("dragging-changed", function (event) {
-        self.orbit.enabled = !event.value;
       });
     },
 
@@ -797,6 +910,17 @@ export default {
         }
       });
     },
+
+    /**
+     * Update the combination of materials inside the object
+     */
+    updateCombine( material ) {
+				return function ( combine ) {
+					material.combine = parseInt( combine );
+					material.needsUpdate = true;
+
+				};
+		},
 
     /***
      * Update the color of the currently selected light
