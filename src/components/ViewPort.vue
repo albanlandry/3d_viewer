@@ -31,23 +31,12 @@
 
 export default {
   data: () => ({
-    scene: null,
-    camera: null,
-    renderer: null,
-    objects: [],
-    WIDTH: 500,
-    HEIGHT: 500,
-    container: null,
+    ambientLight: new window.THREE.AmbientLight( 0x111111 ),
     arrowHelper: new window.THREE.AxesHelper(40),
-    control: null,
-    orbit: null,
+    camera: null,
     cameraOrtho: null,
     cameraPersp: null,
-    envMap: null,
-    gui: null,
-    ambientLight: new window.THREE.AmbientLight( 0x000000 ),
     constants: {
-
 				combine: {
 					'THREE.MultiplyOperation': window.THREE.MultiplyOperation,
 					'THREE.MixOperation': window.THREE.MixOperation,
@@ -91,7 +80,21 @@ export default {
 					'THREE.OneMinusDstColorFactor': window.THREE.OneMinusDstColorFactor,
 					'THREE.SrcAlphaSaturateFactor': window.THREE.SrcAlphaSaturateFactor
 				}
-			}
+			},
+    container: null,
+    control: null,
+    envMap: null,
+    gui: null,
+    HEIGHT: 500,
+    helpers: {
+      spotLightHelper: null,
+      hLightHelper: null,
+    },
+    objects: [],
+    orbit: null,
+    scene: null,
+    renderer: null,
+    WIDTH: 500,
   }),
 
   computed: {
@@ -283,15 +286,20 @@ export default {
       this.gui.domElement.style.top = '80px';
       this.gui.domElement.style.right = '10px';
 
-      console.log(this.gui.domElement.style);
+      // console.log(this.scene);
       // Update the gui elements
       this.guiScene(this.gui, this.scene);
 
-      console.log(selection);
+      // console.log(selection);
       if (selection && selection.material) {
-        var material = new window.THREE.MeshPhongMaterial( selection.material );
-        this.guiMaterial( this.gui, selection, material, selection.geometry );
-        this.guiMeshPhongMaterial( this.gui, selection, material, selection.geometry );
+        selection.material = new window.THREE.MeshPhysicalMaterial( selection.material );
+        selection.material.type = "MeshPhysicalMaterial";
+        selection.material.needsUpdate = true;
+        // console.log(selection.material);
+
+        this.guiMaterial( this.gui, selection, selection.material, selection.geometry );
+        // this.guiMeshPhongMaterial( this.gui, selection, material, selection.geometry );
+        this.guiMeshStandardMaterial( this.gui, selection, selection.material, selection.geometry );
         // this.guiMaterial(this.gui, selection, selection.material);
       }
     },
@@ -334,7 +342,7 @@ export default {
      * Bind the corresponds events
      */
     guiMaterial(gui, mesh, material, geometry) {
-      var self = this;
+      // var self = this;
       var folder = gui.addFolder( 'THREE.Material' );
 
       folder.add( material, 'transparent' );
@@ -348,9 +356,9 @@ export default {
       // folder.add( material, 'polygonOffset' );
       // folder.add( material, 'polygonOffsetFactor' );
       // folder.add( material, 'polygonOffsetUnits' );
-      folder.add( material, 'alphaTest', 0, 1 ).step( 0.01 ).onChange( self.needsUpdate( material, geometry ) );
+      folder.add( material, 'alphaTest', 0, 1 ).step( 0.01 ).onChange( this.needsUpdate( material, geometry ) );
       folder.add( material, 'visible' );
-      folder.add( material, 'side', self.constants.side ).onChange( self.needsUpdate( material, geometry ) );
+      folder.add( material, 'side', this.constants.side ).onChange( this.needsUpdate( material, geometry ) );
     },
 
     guiMeshPhongMaterial( gui, mesh, material, geometry ) {
@@ -388,6 +396,39 @@ export default {
 				folder.add( material, 'refractionRatio', 0, 1 );
 		},
 
+		guiMeshStandardMaterial( gui, mesh, material, geometry ) {
+				var data = {
+					color: material.color.getHex(),
+          emissive: material.emissive.getHex(),
+          /*
+					envMaps: envMapKeys[ 0 ],
+					map: diffuseMapKeys[ 0 ],
+					roughnessMap: roughnessMapKeys[ 0 ],
+          alphaMap: alphaMapKeys[ 0 ]
+          */
+				};
+
+				var folder = gui.addFolder( 'THREE.MeshStandardMaterial' );
+				folder.addColor( data, 'color' ).onChange( this.handleColorChange( material.color ) );
+				folder.addColor( data, 'emissive' ).onChange( this.handleColorChange( material.emissive ) );
+
+				folder.add( material, 'roughness', 0, 1 ).onChange( function ( value ) {
+					material.roughness = value;
+				} );
+				folder.add( material, 'metalness', 0, 1 );
+				folder.add( material, 'flatShading' ).onChange( this.needsUpdate( material, geometry ) );
+				folder.add( material, 'wireframe' );
+				folder.add( material, 'wireframeLinewidth', 0, 10 );
+				folder.add( material, 'vertexColors' ).onChange( this.needsUpdate( material, geometry ) );
+        folder.add( material, 'fog' );
+        /*
+				folder.add( data, 'envMaps', envMapKeys ).onChange( this.updateTexture( material, 'envMap', envMaps ) );
+				folder.add( data, 'map', diffuseMapKeys ).onChange( this.updateTexture( material, 'map', diffuseMaps ) );
+				folder.add( data, 'roughnessMap', this.roughnessMapKeys ).onChange( this.updateTexture( material, 'roughnessMap', roughnessMaps ) );
+        folder.add( data, 'alphaMap', this.alphaMapKeys ).onChange( this.updateTexture( material, 'alphaMap', alphaMaps ) );
+        */
+				// TODO metalnessMap
+    },
     /** The scene folder */
 		guiScene( gui, scene ) {
 				var folder = gui.addFolder( 'Scene' );
@@ -404,7 +445,7 @@ export default {
 
     guiSceneFog( folder, scene ) {
 				var fogFolder = folder.addFolder( 'scene.fog' );
-        var fog = new window.THREE.Fog( 0x3f7b9d, 0, 60 );
+        var fog = this.scene.fog = new window.THREE.Fog(0xa0a0a0, 500, 1000);
 
 				var data = {
 					fog: {
@@ -483,12 +524,14 @@ export default {
       */
 
       /***************************** LIGHTING */
+      this.scene.add( this.ambientLight );
+
       var hemiLight = new window.THREE.HemisphereLight(0xffffff, 0xffffff);
       hemiLight.position.set(0, 200, 0);
       hemiLight.intensity = 1;
       hemiLight.name = "hemisphere." + hemiLight.id;
       // this.scene.add(hemiLight);
-      this.load(hemiLight);
+      // this.load(hemiLight);
 
       var directionalLight = new window.THREE.DirectionalLight(0xffffff);
       directionalLight.position.set(0, 200, 100);
@@ -499,7 +542,7 @@ export default {
       directionalLight.shadow.camera.right = 120;
       directionalLight.intensity = 0.3;
       directionalLight.name = "directional." + directionalLight.id;
-      this.load(directionalLight);
+      // this.load(directionalLight);
 
       /*** GRID HELPER **************************************/
       var grid = new window.THREE.GridHelper(5000, 50, 0x000000, 0x000000);
@@ -785,9 +828,12 @@ export default {
         material.vertexColors = mat.vertexColors;
         material.side = parseInt(material.side); //Ensure number
         material.needsUpdate = true;
+        console.log(geometry);
+        /*
         geometry.attributes.position.needsUpdate = true;
         geometry.attributes.normal.needsUpdate = true;
         geometry.attributes.color.needsUpdate = true;
+        */
       };
     },
 
@@ -860,6 +906,14 @@ export default {
           console.log(e1);
         }
       }
+    },
+
+    removeHelpers(){
+      this.REMOVE_TRANSFORM_CONTROL();
+    },
+
+    removeSpotLightHelper(){
+
     },
 
     /** */

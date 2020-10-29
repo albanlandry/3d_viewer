@@ -138,7 +138,7 @@ export default {
       data.append('model', file);
       */
 
-      data.append('model', JSON.stringify( file));
+      data.append('model', JSON.stringify(file));
 
       this.axios.post(/*'http://127.0.0.1:8000/files'*/
           "/viewer/backend/public/files",
